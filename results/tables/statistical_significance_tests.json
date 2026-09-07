@@ -1,0 +1,50 @@
+[
+  {
+    "method_a": "FedQual-CPX",
+    "method_b": "Random / FedAvg (B0)",
+    "n_pairs": 1,
+    "mean_a": 0.3245,
+    "ci_95_a": "[0.3245, 0.3245]",
+    "mean_b": 0.238,
+    "ci_95_b": "[0.238, 0.238]",
+    "mean_difference": 0.0865,
+    "cohens_d": NaN,
+    "wilcoxon_stat": 0.0,
+    "wilcoxon_p_value": 1.0,
+    "ttest_stat": NaN,
+    "ttest_p_value": NaN,
+    "statistically_significant_05": false
+  },
+  {
+    "method_a": "FedQual-CPX",
+    "method_b": "Utility Greedy (B2)",
+    "n_pairs": 1,
+    "mean_a": 0.3245,
+    "ci_95_a": "[0.3245, 0.3245]",
+    "mean_b": 0.3088,
+    "ci_95_b": "[0.3088, 0.3088]",
+    "mean_difference": 0.0157,
+    "cohens_d": NaN,
+    "wilcoxon_stat": 0.0,
+    "wilcoxon_p_value": 1.0,
+    "ttest_stat": NaN,
+    "ttest_p_value": NaN,
+    "statistically_significant_05": false
+  },
+  {
+    "method_a": "FedQual-CPX",
+    "method_b": "Fixed Exploration (B4, eps=0.15)",
+    "n_pairs": 1,
+    "mean_a": 0.3245,
+    "ci_95_a": "[0.3245, 0.3245]",
+    "mean_b": 0.3423,
+    "ci_95_b": "[0.3423, 0.3423]",
+    "mean_difference": -0.0178,
+    "cohens_d": NaN,
+    "wilcoxon_stat": 0.0,
+    "wilcoxon_p_value": 1.0,
+    "ttest_stat": NaN,
+    "ttest_p_value": NaN,
+    "statistically_significant_05": false
+  }
+]

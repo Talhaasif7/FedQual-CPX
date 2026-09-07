@@ -1,0 +1,5 @@
+method,best_accuracy,final_accuracy,total_time_seconds,gini,entropy,coverage
+random,0.3174,0.238,656.18,0.2753,4.1176,1.0
+utility_greedy,0.3088,0.3088,575.31,0.75,2.3219,0.25
+fixed_exploration,0.3423,0.3423,620.45,0.6167,3.3187,0.7
+fedqual_cpx,0.3262,0.3245,584.64,0.254,4.1732,1.0

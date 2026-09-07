@@ -1,0 +1,4 @@
+method_a,method_b,n_pairs,mean_a,ci_95_a,mean_b,ci_95_b,mean_difference,cohens_d,wilcoxon_stat,wilcoxon_p_value,ttest_stat,ttest_p_value,statistically_significant_05
+FedQual-CPX,Random / FedAvg (B0),1,0.3245,"[0.3245, 0.3245]",0.238,"[0.238, 0.238]",0.0865,nan,0.0,1.0,nan,nan,False
+FedQual-CPX,Utility Greedy (B2),1,0.3245,"[0.3245, 0.3245]",0.3088,"[0.3088, 0.3088]",0.0157,nan,0.0,1.0,nan,nan,False
+FedQual-CPX,"Fixed Exploration (B4, eps=0.15)",1,0.3245,"[0.3245, 0.3245]",0.3423,"[0.3423, 0.3423]",-0.0178,nan,0.0,1.0,nan,nan,False

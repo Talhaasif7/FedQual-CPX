@@ -1,0 +1,83 @@
+[
+  {
+    "detector": "cusum",
+    "delta": 0.25,
+    "num_trials": 50,
+    "mean_delay": 32.38,
+    "std_delay": 31.84,
+    "false_alarms_per_trial": 13.06,
+    "miss_rate": 0.0
+  },
+  {
+    "detector": "page_hinckley",
+    "delta": 0.25,
+    "num_trials": 50,
+    "mean_delay": 46.8,
+    "std_delay": 40.91,
+    "false_alarms_per_trial": 3.94,
+    "miss_rate": 0.0
+  },
+  {
+    "detector": "ewma",
+    "delta": 0.25,
+    "num_trials": 50,
+    "mean_delay": 133.3,
+    "std_delay": 119.53,
+    "false_alarms_per_trial": 1.06,
+    "miss_rate": 0.08
+  },
+  {
+    "detector": "cusum",
+    "delta": 0.5,
+    "num_trials": 50,
+    "mean_delay": 10.92,
+    "std_delay": 7.03,
+    "false_alarms_per_trial": 13.36,
+    "miss_rate": 0.0
+  },
+  {
+    "detector": "page_hinckley",
+    "delta": 0.5,
+    "num_trials": 50,
+    "mean_delay": 16.22,
+    "std_delay": 7.56,
+    "false_alarms_per_trial": 3.8,
+    "miss_rate": 0.0
+  },
+  {
+    "detector": "ewma",
+    "delta": 0.5,
+    "num_trials": 50,
+    "mean_delay": 45.22,
+    "std_delay": 44.74,
+    "false_alarms_per_trial": 1.14,
+    "miss_rate": 0.0
+  },
+  {
+    "detector": "cusum",
+    "delta": 1.0,
+    "num_trials": 50,
+    "mean_delay": 5.06,
+    "std_delay": 3.45,
+    "false_alarms_per_trial": 12.7,
+    "miss_rate": 0.0
+  },
+  {
+    "detector": "page_hinckley",
+    "delta": 1.0,
+    "num_trials": 50,
+    "mean_delay": 8.38,
+    "std_delay": 4.35,
+    "false_alarms_per_trial": 3.46,
+    "miss_rate": 0.0
+  },
+  {
+    "detector": "ewma",
+    "delta": 1.0,
+    "num_trials": 50,
+    "mean_delay": 11.08,
+    "std_delay": 6.7,
+    "false_alarms_per_trial": 0.8,
+    "miss_rate": 0.0
+  }
+]

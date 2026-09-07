@@ -1,0 +1,86 @@
+# =============================================================================
+# FedQual-CPX — CIFAR-10 Base Configuration
+# =============================================================================
+# This is the primary config for CIFAR-10 experiments.
+# Override individual settings via command-line or experiment-specific YAML.
+
+# ── Dataset ──────────────────────────────────────────────────────────────────
+dataset:
+  name: "CIFAR10"
+  processed_dir: "data/processed/cifar10"
+  num_classes: 10
+  image_shape: [32, 32, 3]
+
+# ── Federated Partitioning ───────────────────────────────────────────────────
+partition:
+  method: "dirichlet"
+  alpha: 0.5                    # 0.1=highly heterogeneous, 0.5=medium, 1.0=mild
+  num_clients: 100
+  seed: 42
+  min_samples_per_client: 10    # ensure every client has at least some data
+  val_fraction: 0.1             # fraction of local data held out for validation
+
+# ── Model ────────────────────────────────────────────────────────────────────
+model:
+  name: "SmallCNN"              # SmallCNN for rapid iteration, ResNet18 for final
+  num_classes: 10
+
+# ── Federated Learning ──────────────────────────────────────────────────────
+fl:
+  num_rounds: 100
+  num_clients: 100              # total client population (N)
+  clients_per_round: 10         # selected per round (K)
+  aggregation: "fedavg"         # fedavg or fedprox
+
+# ── Local Training ───────────────────────────────────────────────────────────
+training:
+  local_epochs: 2
+  batch_size: 32
+  optimizer: "sgd"
+  learning_rate: 0.01
+  momentum: 0.9
+  weight_decay: 0.0001
+
+# ── Client Selection ────────────────────────────────────────────────────────
+selection:
+  method: "random"              # random, utility_greedy, fedqual_cpx, etc.
+
+# ── Change Detection (used when selection.method requires it) ────────────────
+detector:
+  type: "cusum"                 # cusum, page_hinkley, ewma, none
+  delta: 0.5                    # allowance parameter
+  threshold: 5.0                # detection threshold H
+  warmup_rounds: 10             # rounds before activating detection
+
+# ── Exploration ──────────────────────────────────────────────────────────────
+exploration:
+  epsilon_min: 0.05
+  epsilon_max: 0.30
+  adaptive: true
+
+# ── Normalization ────────────────────────────────────────────────────────────
+normalization:
+  method: "robust_mad"          # robust_mad, standard, none
+  z_max: 3.0                    # clipping threshold
+  epsilon: 1e-8                 # numerical stability
+
+# ── Drift (disabled by default — enable in experiment-specific configs) ──────
+drift:
+  enabled: false
+  type: "label_shift"           # label_shift, feature_shift, quality_shift, gradual
+  severity: "medium"            # small, medium, large
+  change_round: 50              # round at which drift occurs
+  affected_clients: 0.2         # fraction of clients affected
+
+# ── Evaluation ───────────────────────────────────────────────────────────────
+evaluation:
+  test_every: 1                 # evaluate global model every N rounds
+  save_checkpoint_every: 25
+
+# ── Reproducibility ─────────────────────────────────────────────────────────
+seed: 42
+
+# ── Output ───────────────────────────────────────────────────────────────────
+output:
+  results_dir: "results/raw"
+  save_checkpoints: true

@@ -1,0 +1,67 @@
+# =============================================================================
+# FedQual-CPX — Shakespeare Configuration
+# =============================================================================
+# Section 6.3 & 27.3: Shakespeare Next-Character Prediction benchmark
+
+dataset:
+  name: "Shakespeare"
+  processed_dir: "data/processed/shakespeare"
+  sequence_length: 80
+  vocab_size: 90
+
+partition:
+  method: "natural_character_play"
+  val_fraction: 0.1
+
+model:
+  name: "ShakespeareLSTM"
+  embedding_dim: 8
+  hidden_dim: 256
+  num_layers: 2
+  vocab_size: 90
+
+fl:
+  num_rounds: 100
+  num_clients: 100
+  clients_per_round: 10
+  aggregation: "fedavg"
+
+training:
+  local_epochs: 1
+  batch_size: 64
+  optimizer: "adam"
+  learning_rate: 0.001
+  weight_decay: 0.00001
+
+selection:
+  method: "fedqual_cpx"
+  detector_name: "cusum"
+  warmup_rounds: 10
+  epsilon_min: 0.05
+  epsilon_max: 0.30
+  delta: 0.3
+  h: 2.5
+  cooldown: 2
+  use_uncertainty: true
+  use_adaptive_epsilon: true
+  use_change_bonus: true
+
+normalization:
+  method: "robust_mad"
+  z_max: 3.0
+  epsilon: 1e-8
+
+drift:
+  enabled: false
+  type: "label_shift"
+  drift_round: 50
+  drift_fraction: 0.3
+  severity: "medium"
+
+evaluation:
+  test_every: 1
+  save_checkpoint_every: 25
+
+output:
+  results_dir: "results/raw"
+  save_checkpoints: true

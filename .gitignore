@@ -1,0 +1,102 @@
+# =============================================================================
+# FedQual-CPX .gitignore
+# =============================================================================
+
+# Private / Internal Research Specifications & Plans
+FedQual_CPX_Implementation_Plan.md
+*Implementation_Plan*.md
+*implementation_plan*.md
+
+# Virtual Environments
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Python Bytecode & Cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
+
+# IDE & Editor Specific
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.spyderproject
+.spyproject
+
+# Operating System Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Logs & Temporary Files
+*.log
+*.tmp
+*.bak
+scratch/
+
+# Large Model Checkpoints & Raw Tensor Weights
+*.pth
+*.ckpt
+*.bin
+*.pt
+!data/processed/cifar10/manifest.json
+
+# Dataset Storage Policy (Section 6.5)
+# Exclude bulky raw downloaded archives and processed tensors
+data/raw/*
+!data/raw/.gitkeep
+
+data/processed/**/*.pt
+data/processed/**/*.json
+!data/processed/**/manifest.json
+!data/processed/.gitkeep
+
+data/partitions/*
+!data/partitions/.gitkeep
+!data/partitions/**/*.json
+
+# Paper build files
+paper/*.aux
+paper/*.bbl
+paper/*.blg
+paper/*.log
+paper/*.out
+paper/*.toc
+paper/*.synctex.gz
+paper/*.pdf

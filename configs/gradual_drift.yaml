@@ -1,0 +1,70 @@
+# =============================================================================
+# FedQual-CPX — Gradual Drift Configuration
+# =============================================================================
+# Section 21 & 22: Gradual concept drift over rounds [tau_start, tau_end]
+
+dataset:
+  name: "CIFAR10"
+  processed_dir: "data/processed/cifar10"
+  num_classes: 10
+  image_shape: [32, 32, 3]
+
+partition:
+  method: "dirichlet"
+  alpha: 0.5
+  num_clients: 100
+  seed: 42
+  min_samples_per_client: 10
+  val_fraction: 0.1
+
+model:
+  name: "SmallCNN"
+  num_classes: 10
+
+fl:
+  num_rounds: 100
+  num_clients: 100
+  clients_per_round: 10
+  aggregation: "fedavg"
+
+training:
+  local_epochs: 2
+  batch_size: 32
+  optimizer: "sgd"
+  learning_rate: 0.01
+  momentum: 0.9
+  weight_decay: 0.0001
+
+selection:
+  method: "fedqual_cpx"
+  detector_name: "cusum"
+  warmup_rounds: 10
+  epsilon_min: 0.05
+  epsilon_max: 0.30
+  delta: 0.3
+  h: 2.5
+  cooldown: 2
+  use_uncertainty: true
+  use_adaptive_epsilon: true
+  use_change_bonus: true
+
+normalization:
+  method: "robust_mad"
+  z_max: 3.0
+  epsilon: 1e-8
+
+drift:
+  enabled: true
+  drift_type: "gradual"
+  drift_round: 40
+  drift_end_round: 70
+  drift_fraction: 0.3
+  severity: "medium"
+
+evaluation:
+  test_every: 1
+  save_checkpoint_every: 25
+
+output:
+  results_dir: "results/raw"
+  save_checkpoints: true

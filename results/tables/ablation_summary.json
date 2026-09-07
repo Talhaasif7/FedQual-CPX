@@ -1,0 +1,46 @@
+[
+  {
+    "variant": "A2",
+    "condition": "A2_no_detector",
+    "description": "No Detector (Adaptive exploration + MAD normalization, but no detector)",
+    "best_accuracy": 0.3198,
+    "final_accuracy": 0.3198,
+    "total_time_seconds": 576.64,
+    "gini": 0.278,
+    "entropy": 4.1413,
+    "coverage": 1.0
+  },
+  {
+    "variant": "A3",
+    "condition": "A3_no_normalization",
+    "description": "No Normalization (CUSUM + Adaptive exploration on raw utilities)",
+    "best_accuracy": 0.3047,
+    "final_accuracy": 0.3047,
+    "total_time_seconds": 743.65,
+    "gini": 0.2407,
+    "entropy": 4.1743,
+    "coverage": 1.0
+  },
+  {
+    "variant": "A4",
+    "condition": "A4_page_hinckley",
+    "description": "Page-Hinckley Detector (FLEX detector + adaptive exploration)",
+    "best_accuracy": 0.3198,
+    "final_accuracy": 0.3198,
+    "total_time_seconds": 601.93,
+    "gini": 0.278,
+    "entropy": 4.1413,
+    "coverage": 1.0
+  },
+  {
+    "variant": "A5",
+    "condition": "A5_full_fedqual_cpx",
+    "description": "Full FedQual-CPX (CUSUM + MAD Normalization + Adaptive exploration + Uncertainty + Bonus)",
+    "best_accuracy": 0.3262,
+    "final_accuracy": 0.3245,
+    "total_time_seconds": 588.17,
+    "gini": 0.254,
+    "entropy": 4.1732,
+    "coverage": 1.0
+  }
+]

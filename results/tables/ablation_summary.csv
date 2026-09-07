@@ -1,0 +1,5 @@
+variant,condition,description,best_accuracy,final_accuracy,total_time_seconds,gini,entropy,coverage
+A2,A2_no_detector,"No Detector (Adaptive exploration + MAD normalization, but no detector)",0.3198,0.3198,576.64,0.278,4.1413,1.0
+A3,A3_no_normalization,No Normalization (CUSUM + Adaptive exploration on raw utilities),0.3047,0.3047,743.65,0.2407,4.1743,1.0
+A4,A4_page_hinckley,Page-Hinckley Detector (FLEX detector + adaptive exploration),0.3198,0.3198,601.93,0.278,4.1413,1.0
+A5,A5_full_fedqual_cpx,Full FedQual-CPX (CUSUM + MAD Normalization + Adaptive exploration + Uncertainty + Bonus),0.3262,0.3245,588.17,0.254,4.1732,1.0

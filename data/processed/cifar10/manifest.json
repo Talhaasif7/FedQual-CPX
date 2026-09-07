@@ -1,0 +1,52 @@
+{
+  "dataset": "CIFAR-10",
+  "source": "torchvision.datasets.CIFAR10",
+  "source_url": "https://www.cs.toronto.edu/~kriz/cifar.html",
+  "download_date": "2026-09-07T06:44:59.574946+00:00",
+  "num_classes": 10,
+  "classes": [
+    "airplane",
+    "automobile",
+    "bird",
+    "cat",
+    "deer",
+    "dog",
+    "frog",
+    "horse",
+    "ship",
+    "truck"
+  ],
+  "train_samples": 50000,
+  "test_samples": 10000,
+  "image_shape": [
+    32,
+    32,
+    3
+  ],
+  "train_class_distribution": {
+    "airplane": 5000,
+    "automobile": 5000,
+    "bird": 5000,
+    "cat": 5000,
+    "deer": 5000,
+    "dog": 5000,
+    "frog": 5000,
+    "horse": 5000,
+    "ship": 5000,
+    "truck": 5000
+  },
+  "test_class_distribution": {
+    "airplane": 1000,
+    "automobile": 1000,
+    "bird": 1000,
+    "cat": 1000,
+    "deer": 1000,
+    "dog": 1000,
+    "frog": 1000,
+    "horse": 1000,
+    "ship": 1000,
+    "truck": 1000
+  },
+  "partition_method": "synthetic_dirichlet",
+  "notes": "Requires Dirichlet partitioning into federated clients at experiment time."
+}

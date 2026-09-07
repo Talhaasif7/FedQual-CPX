@@ -1,0 +1,38 @@
+[
+  {
+    "method": "random",
+    "best_accuracy": 0.3174,
+    "final_accuracy": 0.238,
+    "total_time_seconds": 656.18,
+    "gini": 0.2753,
+    "entropy": 4.1176,
+    "coverage": 1.0
+  },
+  {
+    "method": "utility_greedy",
+    "best_accuracy": 0.3088,
+    "final_accuracy": 0.3088,
+    "total_time_seconds": 575.31,
+    "gini": 0.75,
+    "entropy": 2.3219,
+    "coverage": 0.25
+  },
+  {
+    "method": "fixed_exploration",
+    "best_accuracy": 0.3423,
+    "final_accuracy": 0.3423,
+    "total_time_seconds": 620.45,
+    "gini": 0.6167,
+    "entropy": 3.3187,
+    "coverage": 0.7
+  },
+  {
+    "method": "fedqual_cpx",
+    "best_accuracy": 0.3262,
+    "final_accuracy": 0.3245,
+    "total_time_seconds": 584.64,
+    "gini": 0.254,
+    "entropy": 4.1732,
+    "coverage": 1.0
+  }
+]
