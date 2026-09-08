@@ -1,0 +1,7 @@
+method,description,drift_type,num_seeds,final_acc_mean,final_acc_ci_95,recovery_acc_mean,recovery_acc_ci_95,gini_mean,gini_ci_95,coverage_mean,coverage_ci_95
+random,Random / FedAvg (B0),class_swap,5,36.8,"[33.66, 39.31]",26.41,"[24.72, 28.09]",0.1708,"[0.1625, 0.1799]",100.0,"[100.0, 100.0]"
+utility_greedy,Utility Greedy (B2),class_swap,5,38.35,"[35.76, 40.48]",27.31,"[24.64, 30.49]",0.8976,"[0.8950, 0.8995]",12.0,"[10.8, 13.2]"
+sliding_window,"Sliding Window (B3, W=10)",class_swap,5,37.27,"[34.71, 39.28]",27.49,"[25.06, 30.07]",0.8998,"[0.8995, 0.9000]",10.2,"[10.0, 10.6]"
+fixed_exploration,"Fixed Exploration (B4, eps=0.15)",class_swap,5,32.35,"[29.25, 35.59]",25.24,"[23.22, 27.26]",0.7052,"[0.6836, 0.7287]",90.4,"[89.0, 91.8]"
+page_hinckley_adaptive,"Page-Hinckley Adaptive (B6, FLEX)",class_swap,5,33.24,"[31.66, 34.88]",25.64,"[23.98, 27.11]",0.4846,"[0.4554, 0.5137]",100.0,"[100.0, 100.0]"
+fedqual_cpx,FedQual-CPX (B8 - Proposed CUSUM),class_swap,5,33.24,"[31.66, 34.88]",25.64,"[23.98, 27.11]",0.4846,"[0.4554, 0.5137]",100.0,"[100.0, 100.0]"

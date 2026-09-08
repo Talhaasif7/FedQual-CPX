@@ -1,0 +1,13 @@
+parameter,param_value,method,final_accuracy,gini,coverage
+alpha,0.1,random,0.1,0.2391,1.0
+alpha,0.1,fedqual_cpx,0.1,0.2431,1.0
+alpha,0.5,random,0.4084,0.2391,1.0
+alpha,0.5,fedqual_cpx,0.4227,0.2529,1.0
+alpha,1.0,random,0.4055,0.2391,1.0
+alpha,1.0,fedqual_cpx,0.4413,0.3387,1.0
+drift_fraction,0.1,random,0.4125,0.2391,1.0
+drift_fraction,0.1,fedqual_cpx,0.4314,0.2827,1.0
+drift_fraction,0.3,random,0.4084,0.2391,1.0
+drift_fraction,0.3,fedqual_cpx,0.4227,0.2529,1.0
+drift_fraction,0.5,random,0.3575,0.2391,1.0
+drift_fraction,0.5,fedqual_cpx,0.3816,0.2693,1.0

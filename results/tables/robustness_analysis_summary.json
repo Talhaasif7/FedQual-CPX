@@ -1,0 +1,98 @@
+[
+  {
+    "parameter": "alpha",
+    "param_value": 0.1,
+    "method": "random",
+    "final_accuracy": 0.1,
+    "gini": 0.2391,
+    "coverage": 1.0
+  },
+  {
+    "parameter": "alpha",
+    "param_value": 0.1,
+    "method": "fedqual_cpx",
+    "final_accuracy": 0.1,
+    "gini": 0.2431,
+    "coverage": 1.0
+  },
+  {
+    "parameter": "alpha",
+    "param_value": 0.5,
+    "method": "random",
+    "final_accuracy": 0.4084,
+    "gini": 0.2391,
+    "coverage": 1.0
+  },
+  {
+    "parameter": "alpha",
+    "param_value": 0.5,
+    "method": "fedqual_cpx",
+    "final_accuracy": 0.4227,
+    "gini": 0.2529,
+    "coverage": 1.0
+  },
+  {
+    "parameter": "alpha",
+    "param_value": 1.0,
+    "method": "random",
+    "final_accuracy": 0.4055,
+    "gini": 0.2391,
+    "coverage": 1.0
+  },
+  {
+    "parameter": "alpha",
+    "param_value": 1.0,
+    "method": "fedqual_cpx",
+    "final_accuracy": 0.4413,
+    "gini": 0.3387,
+    "coverage": 1.0
+  },
+  {
+    "parameter": "drift_fraction",
+    "param_value": 0.1,
+    "method": "random",
+    "final_accuracy": 0.4125,
+    "gini": 0.2391,
+    "coverage": 1.0
+  },
+  {
+    "parameter": "drift_fraction",
+    "param_value": 0.1,
+    "method": "fedqual_cpx",
+    "final_accuracy": 0.4314,
+    "gini": 0.2827,
+    "coverage": 1.0
+  },
+  {
+    "parameter": "drift_fraction",
+    "param_value": 0.3,
+    "method": "random",
+    "final_accuracy": 0.4084,
+    "gini": 0.2391,
+    "coverage": 1.0
+  },
+  {
+    "parameter": "drift_fraction",
+    "param_value": 0.3,
+    "method": "fedqual_cpx",
+    "final_accuracy": 0.4227,
+    "gini": 0.2529,
+    "coverage": 1.0
+  },
+  {
+    "parameter": "drift_fraction",
+    "param_value": 0.5,
+    "method": "random",
+    "final_accuracy": 0.3575,
+    "gini": 0.2391,
+    "coverage": 1.0
+  },
+  {
+    "parameter": "drift_fraction",
+    "param_value": 0.5,
+    "method": "fedqual_cpx",
+    "final_accuracy": 0.3816,
+    "gini": 0.2693,
+    "coverage": 1.0
+  }
+]
