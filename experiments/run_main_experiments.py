@@ -189,26 +189,35 @@ def run_main_experiments(
         print(f"\n[RUNNING METHOD] {MAIN_METHOD_CONFIGS[method]['description']}")
         for seed in seeds:
             exp_id = f"main_{drift_type}_{method}_seed{seed}"
-            cfg = build_main_config(
-                method_key=method,
-                seed=seed,
-                drift_type=drift_type,
-                num_clients=num_clients,
-                clients_per_round=clients_per_round,
-                num_rounds=num_rounds,
-                drift_round=drift_round,
-            )
-            sim = FederatedSimulator(cfg, experiment_id=exp_id)
-            summary = sim.run()
-
+            exp_dir = Path("results/raw") / exp_id
             eval_history: list[dict[str, Any]] = []
-            if sim.logger and getattr(sim.logger, "round_history", None):
-                eval_history = sim.logger.round_history
-            elif sim.logger and getattr(sim.logger, "global_rows", None):
-                eval_history = sim.logger.global_rows
-            elif (sim.output_dir / "global_metrics.csv").exists():
-                with open(sim.output_dir / "global_metrics.csv", "r", encoding="utf-8") as f:
+
+            if (exp_dir / "summary.json").exists() and (exp_dir / "global_metrics.csv").exists():
+                print(f"  -> Found cached results for {exp_id}, loading...")
+                with open(exp_dir / "summary.json", "r", encoding="utf-8") as f:
+                    summary = json.load(f)
+                with open(exp_dir / "global_metrics.csv", "r", encoding="utf-8") as f:
                     eval_history = list(csv.DictReader(f))
+            else:
+                cfg = build_main_config(
+                    method_key=method,
+                    seed=seed,
+                    drift_type=drift_type,
+                    num_clients=num_clients,
+                    clients_per_round=clients_per_round,
+                    num_rounds=num_rounds,
+                    drift_round=drift_round,
+                )
+                sim = FederatedSimulator(cfg, experiment_id=exp_id)
+                summary = sim.run()
+
+                if sim.logger and getattr(sim.logger, "round_history", None):
+                    eval_history = sim.logger.round_history
+                elif sim.logger and getattr(sim.logger, "global_rows", None):
+                    eval_history = sim.logger.global_rows
+                elif (sim.output_dir / "global_metrics.csv").exists():
+                    with open(sim.output_dir / "global_metrics.csv", "r", encoding="utf-8") as f:
+                        eval_history = list(csv.DictReader(f))
 
             final_acc = summary["final_accuracy"]
             best_acc = summary["best_accuracy"]
@@ -250,10 +259,10 @@ def run_main_experiments(
         ginis = [r["gini"] for r in runs]
         coverages = [r["coverage"] for r in runs]
 
-        final_mean, (final_ci_l, final_ci_h) = compute_bootstrap_ci(final_accs)
-        rec_mean, (rec_ci_l, rec_ci_h) = compute_bootstrap_ci(recovery_accs)
-        gini_mean, (gini_ci_l, gini_ci_h) = compute_bootstrap_ci(ginis)
-        cov_mean, (cov_ci_l, cov_ci_h) = compute_bootstrap_ci(coverages)
+        final_mean, final_ci_l, final_ci_h = compute_bootstrap_ci(final_accs)
+        rec_mean, rec_ci_l, rec_ci_h = compute_bootstrap_ci(recovery_accs)
+        gini_mean, gini_ci_l, gini_ci_h = compute_bootstrap_ci(ginis)
+        cov_mean, cov_ci_l, cov_ci_h = compute_bootstrap_ci(coverages)
 
         summary_rows.append({
             "method": method,
