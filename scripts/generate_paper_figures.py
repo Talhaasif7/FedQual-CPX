@@ -172,14 +172,29 @@ def generate_figure2_detector_delay(benchmark_json: Path, output_dir: Path) -> N
 
 def generate_figure3_learning_curves(results_dir: Path, output_dir: Path) -> None:
     """Figure 3: Global Test Accuracy Learning Curves."""
-    fig, ax = plt.subplots(figsize=(8, 5))
+    fig, ax = plt.subplots(figsize=(8.5, 5.2))
 
-    conditions = [
-        ("random", "pilot_random_seed42"),
-        ("utility_greedy", "pilot_utility_greedy_seed42"),
-        ("fixed_exploration", "pilot_fixed_exploration_seed42"),
-        ("fedqual_cpx", "pilot_fedqual_cpx_seed42"),
-    ]
+    is_main_scale = (results_dir / "main_class_swap_fedqual_cpx_seed42" / "global_metrics.csv").exists()
+
+    if is_main_scale:
+        conditions = [
+            ("random", "main_class_swap_random_seed42"),
+            ("utility_greedy", "main_class_swap_utility_greedy_seed42"),
+            ("sliding_window", "main_class_swap_sliding_window_seed42"),
+            ("fixed_exploration", "main_class_swap_fixed_exploration_seed42"),
+            ("fedqual_cpx", "main_class_swap_fedqual_cpx_seed42"),
+        ]
+        drift_round = 50
+        title_suffix = "100-Round Main Scale Multi-Seed Suite (N=100, K=10)"
+    else:
+        conditions = [
+            ("random", "pilot_random_seed42"),
+            ("utility_greedy", "pilot_utility_greedy_seed42"),
+            ("fixed_exploration", "pilot_fixed_exploration_seed42"),
+            ("fedqual_cpx", "pilot_fedqual_cpx_seed42"),
+        ]
+        drift_round = 15
+        title_suffix = "Pilot Benchmark (N=20, K=5)"
 
     for key, folder in conditions:
         csv_path = results_dir / folder / "global_metrics.csv"
@@ -188,27 +203,29 @@ def generate_figure3_learning_curves(results_dir: Path, output_dir: Path) -> Non
 
         rounds = []
         accs = []
-        with open(csv_path, "r") as f:
+        with open(csv_path, "r", encoding="utf-8") as f:
             reader = csv.DictReader(f)
             for row in reader:
-                if row["test_accuracy"]:
+                if row.get("test_accuracy"):
                     rounds.append(int(row["round"]))
                     accs.append(float(row["test_accuracy"]) * 100)
 
-        marker = "o" if key == "fedqual_cpx" else ("s" if key == "fixed_exploration" else "v")
+        marker = "o" if key == "fedqual_cpx" else ("s" if key == "fixed_exploration" else ("^" if key == "sliding_window" else "v"))
+        markevery = 5 if len(rounds) > 40 else 2
         ax.plot(
             rounds,
             accs,
             label=LABELS.get(key, key),
             color=COLORS.get(key, "#333333"),
             marker=marker,
+            markevery=markevery,
             linewidth=2.4 if key == "fedqual_cpx" else 1.8,
         )
 
-    ax.axvline(x=15, color="#d62728", linestyle="--", label="Drift Onset ($\\tau=15$)")
+    ax.axvline(x=drift_round, color="#d62728", linestyle="--", label=f"Drift Onset ($\\tau={drift_round}$)")
     ax.set_xlabel("Communication Round ($t$)")
     ax.set_ylabel("Global Test Accuracy (%)")
-    ax.set_title("Global Model Convergence under Piecewise-Stationary Drift (CIFAR-10)")
+    ax.set_title(f"Global Model Convergence under Concept Drift\n{title_suffix}")
     ax.legend(loc="lower right")
 
     plt.tight_layout()
@@ -221,17 +238,25 @@ def generate_figure3_learning_curves(results_dir: Path, output_dir: Path) -> Non
 def generate_figure4_fairness_gini(multi_seed_json: Path, output_dir: Path) -> None:
     """Figure 4: Client Participation Fairness (Gini Index) Comparison."""
     if not multi_seed_json.exists():
-        print(f"[Warning] {multi_seed_json} not found. Skipping Fig 4.")
-        return
+        fallback = Path("results/tables/main_experiments_summary_class_swap.json")
+        if fallback.exists():
+            multi_seed_json = fallback
+        else:
+            fallback2 = Path("results/tables/multi_seed_summary.json")
+            if fallback2.exists():
+                multi_seed_json = fallback2
+            else:
+                print(f"[Warning] Fairness summary json not found. Skipping Fig 4.")
+                return
 
-    with open(multi_seed_json, "r") as f:
+    with open(multi_seed_json, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    fig, ax = plt.subplots(figsize=(7, 4.5))
+    fig, ax = plt.subplots(figsize=(7.5, 4.8))
 
     methods = [r["method"] for r in data]
-    ginis = [r["gini_mean"] for r in data]
-    labels = [r["description"] for r in data]
+    ginis = [r.get("gini_mean", r.get("gini", 0.0)) for r in data]
+    labels = [r.get("description", LABELS.get(m, m)) for m, r in zip(methods, data)]
     colors = [COLORS.get(m, "#333333") for m in methods]
 
     bars = ax.bar(range(len(methods)), ginis, color=colors, edgecolor="black", width=0.55, alpha=0.85)
@@ -248,7 +273,7 @@ def generate_figure4_fairness_gini(multi_seed_json: Path, output_dir: Path) -> N
         )
 
     ax.set_xticks(range(len(methods)))
-    ax.set_xticklabels(labels, rotation=15, ha="right")
+    ax.set_xticklabels(labels, rotation=20, ha="right")
     ax.set_ylabel("Participation Gini Index (Lower = Fairer)")
     ax.set_title("Client Selection Fairness Comparison (RQ8)")
     ax.set_ylim(0.0, 1.0)
@@ -263,17 +288,25 @@ def generate_figure4_fairness_gini(multi_seed_json: Path, output_dir: Path) -> N
 def generate_figure5_ablation(ablation_json: Path, output_dir: Path) -> None:
     """Figure 5: Component-wise Ablation Study Comparison."""
     if not ablation_json.exists():
-        print(f"[Warning] {ablation_json} not found. Skipping Fig 5.")
-        return
+        fallback = Path("results/tables/ablation_comprehensive_summary.json")
+        if fallback.exists():
+            ablation_json = fallback
+        else:
+            fallback2 = Path("results/tables/ablation_summary.json")
+            if fallback2.exists():
+                ablation_json = fallback2
+            else:
+                print(f"[Warning] {ablation_json} not found. Skipping Fig 5.")
+                return
 
-    with open(ablation_json, "r") as f:
+    with open(ablation_json, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    fig, ax = plt.subplots(figsize=(8, 4.5))
+    fig, ax = plt.subplots(figsize=(8.5, 5))
 
-    variants = [r["variant"] if "variant" in r else r.get("key", "") for r in data]
-    accs = [r["final_accuracy"] * 100 for r in data]
-    labels = [r["description"] for r in data]
+    variants = [r.get("variant", r.get("key", "")) for r in data]
+    accs = [float(r.get("final_accuracy", 0.0)) * 100 for r in data]
+    labels = [r.get("description", v) for v, r in zip(variants, data)]
 
     bars = ax.barh(range(len(variants)), accs, color="#1f77b4", edgecolor="black", height=0.55, alpha=0.85)
 
@@ -284,7 +317,7 @@ def generate_figure5_ablation(ablation_json: Path, output_dir: Path) -> None:
             f"{val:.2f}%",
             ha="left",
             va="center",
-            fontsize=9.5,
+            fontsize=9.0,
             fontweight="bold",
         )
 
@@ -292,7 +325,7 @@ def generate_figure5_ablation(ablation_json: Path, output_dir: Path) -> None:
     ax.set_yticklabels(labels)
     ax.set_xlabel("Final Test Accuracy (%)")
     ax.set_title("Component-Wise Ablation Breakdown (RQ4 & RQ6)")
-    ax.set_xlim(25, 40)
+    ax.set_xlim(25, max(accs) + 5 if accs else 40)
     ax.invert_yaxis()
 
     plt.tight_layout()
@@ -315,8 +348,8 @@ def generate_all_paper_figures() -> None:
     generate_figure1_detector_concept(output_dir)
     generate_figure2_detector_delay(tables_dir / "synthetic_detector_benchmark.json", output_dir)
     generate_figure3_learning_curves(results_dir, output_dir)
-    generate_figure4_fairness_gini(tables_dir / "multi_seed_summary.json", output_dir)
-    generate_figure5_ablation(tables_dir / "ablation_summary.json", output_dir)
+    generate_figure4_fairness_gini(tables_dir / "main_experiments_summary_class_swap.json", output_dir)
+    generate_figure5_ablation(tables_dir / "ablation_comprehensive_summary.json", output_dir)
 
     print("=" * 80)
     print(f"All figures generated successfully in {output_dir}/")
