@@ -41,10 +41,29 @@ class CIFAR10Dataset(Dataset):
         filename = "train.pt" if train else "test.pt"
         filepath = processed_dir / filename
 
+        project_root = Path(__file__).resolve().parent.parent.parent
+        alt_filepath = project_root / processed_dir / filename
+
+        if not filepath.exists():
+            if alt_filepath.exists():
+                filepath = alt_filepath
+            else:
+                # Attempt auto-download and processing
+                try:
+                    from scripts.download_data import download_cifar10
+                    print(f"[Dataset] Processed dataset not found at {filepath}. Auto-downloading...")
+                    download_cifar10()
+                    if alt_filepath.exists():
+                        filepath = alt_filepath
+                    elif (processed_dir / filename).exists():
+                        filepath = processed_dir / filename
+                except Exception as e:
+                    print(f"[Dataset] Auto-download attempt failed: {e}")
+
         if not filepath.exists():
             raise FileNotFoundError(
                 f"Processed dataset not found: {filepath}\n"
-                f"Run: python scripts/download_data.py --dataset cifar10"
+                f"Run: python scripts/download_data.py --dataset cifar10 --force"
             )
 
         data = torch.load(filepath, weights_only=True)

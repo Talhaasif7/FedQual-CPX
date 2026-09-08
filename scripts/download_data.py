@@ -52,8 +52,13 @@ def _write_manifest(path: Path, manifest: dict) -> None:
 
 
 def _manifest_exists(dataset_name: str) -> bool:
-    """Check whether a processed manifest already exists."""
-    return (DATA_PROCESSED / dataset_name / "manifest.json").exists()
+    """Check whether a processed manifest and data files already exist."""
+    folder = DATA_PROCESSED / dataset_name
+    return (
+        (folder / "manifest.json").exists()
+        and (folder / "train.pt").exists()
+        and (folder / "test.pt").exists()
+    )
 
 
 # ===================================================================
