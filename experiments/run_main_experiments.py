@@ -201,7 +201,15 @@ def run_main_experiments(
             sim = FederatedSimulator(cfg, experiment_id=exp_id)
             summary = sim.run()
 
-            eval_history = sim.logger.global_rows if sim.logger else []
+            eval_history: list[dict[str, Any]] = []
+            if sim.logger and getattr(sim.logger, "round_history", None):
+                eval_history = sim.logger.round_history
+            elif sim.logger and getattr(sim.logger, "global_rows", None):
+                eval_history = sim.logger.global_rows
+            elif (sim.output_dir / "global_metrics.csv").exists():
+                with open(sim.output_dir / "global_metrics.csv", "r", encoding="utf-8") as f:
+                    eval_history = list(csv.DictReader(f))
+
             final_acc = summary["final_accuracy"]
             best_acc = summary["best_accuracy"]
 

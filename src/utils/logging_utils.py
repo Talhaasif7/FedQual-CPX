@@ -83,6 +83,11 @@ class ExperimentLogger:
         # In-memory history for quick access
         self.round_history: list[dict[str, Any]] = []
 
+    @property
+    def global_rows(self) -> list[dict[str, Any]]:
+        """Alias for round_history for backward compatibility."""
+        return self.round_history
+
     def log_round(self, **kwargs: Any) -> None:
         """Log a single round's global metrics.
 
