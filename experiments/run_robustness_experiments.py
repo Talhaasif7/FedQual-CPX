@@ -121,16 +121,25 @@ def run_robustness_experiments(
     for alpha in [0.1, 0.5, 1.0]:
         for method in ["random", "fedqual_cpx"]:
             exp_id = f"robust_alpha_{alpha}_{method}"
-            cfg = build_robustness_config(
-                alpha=alpha,
-                drift_fraction=0.3,
-                num_clients=num_clients,
-                clients_per_round=clients_per_round,
-                num_rounds=num_rounds,
-                drift_round=drift_round,
-                method=method,
-            )
-            summary = sim.run()
+            exp_dir = Path("results/raw") / exp_id
+
+            if (exp_dir / "summary.json").exists():
+                print(f"  -> Found cached results for {exp_id}, loading...")
+                with open(exp_dir / "summary.json", "r", encoding="utf-8") as f:
+                    summary = json.load(f)
+            else:
+                cfg = build_robustness_config(
+                    alpha=alpha,
+                    drift_fraction=0.3,
+                    num_clients=num_clients,
+                    clients_per_round=clients_per_round,
+                    num_rounds=num_rounds,
+                    drift_round=drift_round,
+                    method=method,
+                )
+                sim = FederatedSimulator(cfg, experiment_id=exp_id)
+                summary = sim.run()
+
             final_acc = summary["final_accuracy"]
             gini = summary["participation"]["gini"]
             coverage = summary["participation"]["coverage"]
@@ -150,17 +159,25 @@ def run_robustness_experiments(
     for df in [0.1, 0.3, 0.5]:
         for method in ["random", "fedqual_cpx"]:
             exp_id = f"robust_drift_frac_{df}_{method}"
-            cfg = build_robustness_config(
-                alpha=0.5,
-                drift_fraction=df,
-                num_clients=num_clients,
-                clients_per_round=clients_per_round,
-                num_rounds=num_rounds,
-                drift_round=drift_round,
-                method=method,
-            )
-            sim = FederatedSimulator(cfg, experiment_id=exp_id)
-            summary = sim.run()
+            exp_dir = Path("results/raw") / exp_id
+
+            if (exp_dir / "summary.json").exists():
+                print(f"  -> Found cached results for {exp_id}, loading...")
+                with open(exp_dir / "summary.json", "r", encoding="utf-8") as f:
+                    summary = json.load(f)
+            else:
+                cfg = build_robustness_config(
+                    alpha=0.5,
+                    drift_fraction=df,
+                    num_clients=num_clients,
+                    clients_per_round=clients_per_round,
+                    num_rounds=num_rounds,
+                    drift_round=drift_round,
+                    method=method,
+                )
+                sim = FederatedSimulator(cfg, experiment_id=exp_id)
+                summary = sim.run()
+
             final_acc = summary["final_accuracy"]
             gini = summary["participation"]["gini"]
             coverage = summary["participation"]["coverage"]
