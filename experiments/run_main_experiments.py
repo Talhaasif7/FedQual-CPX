@@ -107,6 +107,10 @@ def build_main_config(
 ) -> Config:
     """Build standardized Config object for main scale runs."""
     info = MAIN_METHOD_CONFIGS[method_key]
+    is_gradual = drift_type in ("gradual", "gradual_drift")
+    actual_drift_round = int(round(num_rounds * 0.3)) if is_gradual else drift_round
+    actual_drift_end = int(round(num_rounds * 0.7)) if is_gradual else (drift_round + 20)
+
     return Config({
         "seed": seed,
         "dataset": {
@@ -144,7 +148,8 @@ def build_main_config(
         "drift": {
             "enabled": True,
             "drift_type": drift_type,
-            "drift_round": drift_round,
+            "drift_round": actual_drift_round,
+            "drift_end_round": actual_drift_end,
             "drift_fraction": 0.3,
             "severity": "medium",
         },
@@ -177,10 +182,17 @@ def run_main_experiments(
     clients_per_round: int = 10,
     drift_round: int = 50,
 ) -> None:
+    is_gradual = drift_type in ("gradual", "gradual_drift")
+    actual_drift_round = int(round(num_rounds * 0.3)) if is_gradual else drift_round
+    actual_drift_end = int(round(num_rounds * 0.7)) if is_gradual else (drift_round + 20)
+
     print("=" * 80)
     print(f"FedQual-CPX Phase 12: Main Scale Multi-Seed Experiment Suite")
     print(f"Drift Type: {drift_type} | Seeds: {list(seeds)}")
-    print(f"Clients N={num_clients}, Selection K={clients_per_round}, Rounds T={num_rounds}, tau={drift_round}")
+    if is_gradual:
+        print(f"Clients N={num_clients}, Selection K={clients_per_round}, Rounds T={num_rounds}, tau=[{actual_drift_round}, {actual_drift_end}]")
+    else:
+        print(f"Clients N={num_clients}, Selection K={clients_per_round}, Rounds T={num_rounds}, tau={actual_drift_round}")
     print("=" * 80)
 
     results_by_method: dict[str, list[dict[str, Any]]] = {m: [] for m in methods}
@@ -206,7 +218,7 @@ def run_main_experiments(
                     num_clients=num_clients,
                     clients_per_round=clients_per_round,
                     num_rounds=num_rounds,
-                    drift_round=drift_round,
+                    drift_round=actual_drift_round,
                 )
                 sim = FederatedSimulator(cfg, experiment_id=exp_id)
                 summary = sim.run()
@@ -222,11 +234,12 @@ def run_main_experiments(
             final_acc = summary["final_accuracy"]
             best_acc = summary["best_accuracy"]
 
-            # Recovery accuracy (mean test accuracy over 10 rounds after drift)
+            # Recovery accuracy (post-drift window)
+            eval_recovery_start = 70 if is_gradual else actual_drift_round
             post_drift_accs = [
                 float(e["test_accuracy"])
                 for e in eval_history
-                if e.get("test_accuracy") != "" and drift_round <= int(e["round"]) <= drift_round + 10
+                if e.get("test_accuracy") != "" and eval_recovery_start <= int(e["round"]) <= eval_recovery_start + 10
             ]
             recovery_acc = float(sum(post_drift_accs) / len(post_drift_accs)) if post_drift_accs else final_acc
 

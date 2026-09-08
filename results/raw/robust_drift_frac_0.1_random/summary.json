@@ -1,0 +1,83 @@
+{
+  "experiment_id": "robust_drift_frac_0.1_random",
+  "best_accuracy": 0.4125,
+  "final_accuracy": 0.4125,
+  "total_rounds": 30,
+  "total_time_seconds": 49.74,
+  "participation": {
+    "gini": 0.2391,
+    "entropy": 4.7682,
+    "coverage": 1.0,
+    "min_participations": 1,
+    "max_participations": 11
+  },
+  "reproducibility": {
+    "timestamp": "2026-09-08T15:25:01.353400+00:00",
+    "python_version": "3.13.15 (main, Aug  6 2026, 11:06:23) [GCC 11.4.0]",
+    "torch_version": "2.14.0+cu130",
+    "cuda_available": "True",
+    "cuda_version": "13.0",
+    "gpu_name": "Tesla T4",
+    "git_commit": "d76e10878e6cf117cdefa1d3ea21c61ee345c8a0"
+  },
+  "config": {
+    "seed": 42,
+    "dataset": {
+      "name": "CIFAR10",
+      "processed_dir": "data/processed/cifar10",
+      "num_classes": 10,
+      "image_shape": [
+        32,
+        32,
+        3
+      ]
+    },
+    "partition": {
+      "method": "dirichlet",
+      "alpha": 0.5,
+      "num_clients": 30,
+      "seed": 42,
+      "min_samples_per_client": 10,
+      "val_fraction": 0.1
+    },
+    "model": {
+      "name": "SmallCNN",
+      "num_classes": 10
+    },
+    "training": {
+      "local_epochs": 1,
+      "batch_size": 32,
+      "optimizer": "sgd",
+      "learning_rate": 0.01,
+      "momentum": 0.9,
+      "weight_decay": 0.0001
+    },
+    "fl": {
+      "num_rounds": 30,
+      "num_clients": 30,
+      "clients_per_round": 5,
+      "aggregation": "fedavg"
+    },
+    "drift": {
+      "enabled": true,
+      "drift_type": "class_swap",
+      "drift_round": 15,
+      "drift_fraction": 0.1,
+      "severity": "medium"
+    },
+    "selection": {
+      "method": "random"
+    },
+    "normalization": {
+      "method": "none"
+    },
+    "evaluation": {
+      "test_every": 1,
+      "save_checkpoint_every": 100
+    },
+    "output": {
+      "results_dir": "results/raw",
+      "save_checkpoints": false
+    }
+  }
+}

@@ -1,0 +1,47 @@
+seed: 43
+dataset:
+  name: CIFAR10
+  processed_dir: data/processed/cifar10
+  num_classes: 10
+  image_shape:
+  - 32
+  - 32
+  - 3
+partition:
+  method: dirichlet
+  alpha: 0.5
+  num_clients: 20
+  seed: 43
+  min_samples_per_client: 10
+  val_fraction: 0.1
+model:
+  name: SmallCNN
+  num_classes: 10
+training:
+  local_epochs: 1
+  batch_size: 32
+  optimizer: sgd
+  learning_rate: 0.01
+  momentum: 0.9
+  weight_decay: 0.0001
+fl:
+  num_rounds: 15
+  num_clients: 20
+  clients_per_round: 5
+  aggregation: fedavg
+drift:
+  enabled: true
+  drift_type: class_swap
+  drift_round: 8
+  drift_fraction: 0.3
+  severity: medium
+selection:
+  method: random
+normalization:
+  method: none
+evaluation:
+  test_every: 1
+  save_checkpoint_every: 100
+output:
+  results_dir: results/raw
+  save_checkpoints: false

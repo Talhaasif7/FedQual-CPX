@@ -45,9 +45,14 @@ class ShakespeareLSTM(nn.Module):
         self,
         x: torch.Tensor,
         hidden: tuple[torch.Tensor, torch.Tensor] | None = None,
-    ) -> tuple[torch.Tensor, tuple[torch.Tensor, torch.Tensor]]:
+        return_sequences: bool = True,
+    ) -> tuple[torch.Tensor, tuple[torch.Tensor, torch.Tensor]] | torch.Tensor:
         # x: [B, seq_len]
         embeds = self.embedding(x)  # [B, seq_len, embed_dim]
         out, hidden = self.lstm(embeds, hidden)  # out: [B, seq_len, hidden_dim]
         logits = self.fc(out)  # [B, seq_len, vocab_size]
-        return logits, hidden
+        if return_sequences:
+            return logits, hidden
+        return logits[:, -1, :]
+
+

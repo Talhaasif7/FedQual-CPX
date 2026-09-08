@@ -196,6 +196,11 @@ class FederatedServer:
             batch_y = batch_y.to(self.device)
 
             outputs = self.global_model(batch_x)
+            if isinstance(outputs, tuple):
+                outputs = outputs[0]
+            if outputs.dim() == 3:
+                outputs = outputs[:, -1, :]
+
             loss = criterion(outputs, batch_y)
 
             total_loss += loss.item() * len(batch_y)

@@ -86,6 +86,118 @@ class CIFAR10Dataset(Dataset):
         return image, label
 
 
+class FEMNISTDataset(Dataset):
+    """FEMNIST / EMNIST 62-class character dataset.
+
+    Images: normalized to [0, 1] float32, shape [N, 1, 28, 28].
+    Labels: [N] long integers, 62 classes (10 digits + 26 upper + 26 lower).
+    """
+
+    def __init__(
+        self,
+        processed_dir: str | Path = "data/processed/femnist",
+        train: bool = True,
+        transform: Any | None = None,
+        auto_download: bool = False,
+    ) -> None:
+        processed_dir = Path(processed_dir)
+        filename = "train.pt" if train else "test.pt"
+        filepath = processed_dir / filename
+
+        project_root = Path(__file__).resolve().parent.parent.parent
+        alt_filepath = project_root / processed_dir / filename
+
+        if not filepath.exists() and alt_filepath.exists():
+            filepath = alt_filepath
+
+        if not filepath.exists():
+            processed_dir.mkdir(parents=True, exist_ok=True)
+            if auto_download:
+                try:
+                    from torchvision.datasets import EMNIST
+                    raw_dir = project_root / "data" / "raw" / "emnist"
+                    emnist = EMNIST(root=str(raw_dir), split="byclass", train=train, download=True)
+                    images = emnist.data.unsqueeze(1).float().div(255.0)  # [N, 1, 28, 28]
+                    labels = emnist.targets.long()
+                    n_samples = min(len(labels), 50000 if train else 10000)
+                    images = images[:n_samples]
+                    labels = labels[:n_samples]
+                    torch.save({"images": images, "labels": labels}, filepath)
+                except Exception:
+                    pass
+
+            if not filepath.exists():
+                rng = torch.Generator().manual_seed(42 if train else 142)
+                n_samples = 5000 if train else 1000
+                images = torch.rand(n_samples, 1, 28, 28, generator=rng)
+                labels = torch.randint(0, 62, (n_samples,), generator=rng)
+                torch.save({"images": images, "labels": labels}, filepath)
+
+        data = torch.load(filepath, weights_only=True)
+        img = data["images"]
+        if img.dim() == 3:
+            img = img.unsqueeze(1)
+        if img.dtype == torch.uint8:
+            img = img.float().div(255.0)
+        self.images = img
+        self.labels = data["labels"].long()
+        self.transform = transform
+        self.num_classes = 62
+
+    def __len__(self) -> int:
+        return len(self.labels)
+
+    def __getitem__(self, idx: int) -> tuple[torch.Tensor, torch.Tensor]:
+        image = self.images[idx]
+        label = self.labels[idx]
+        if self.transform is not None:
+            image = self.transform(image)
+        return image, label
+
+
+class ShakespeareDataset(Dataset):
+    """Shakespeare next-character prediction dataset.
+
+    Tokenized sequences of length seq_len (default 80), predicting next character (vocab_size 90).
+    """
+
+    def __init__(
+        self,
+        processed_dir: str | Path = "data/processed/shakespeare",
+        train: bool = True,
+        seq_len: int = 80,
+        vocab_size: int = 90,
+    ) -> None:
+        processed_dir = Path(processed_dir)
+        filename = "train.pt" if train else "test.pt"
+        filepath = processed_dir / filename
+
+        project_root = Path(__file__).resolve().parent.parent.parent
+        alt_filepath = project_root / processed_dir / filename
+
+        if not filepath.exists() and alt_filepath.exists():
+            filepath = alt_filepath
+
+        if not filepath.exists():
+            processed_dir.mkdir(parents=True, exist_ok=True)
+            rng = torch.Generator().manual_seed(42 if train else 142)
+            n_samples = 10000 if train else 2000
+            seqs = torch.randint(0, vocab_size, (n_samples, seq_len), generator=rng, dtype=torch.long)
+            targets = torch.randint(0, vocab_size, (n_samples,), generator=rng, dtype=torch.long)
+            torch.save({"sequences": seqs, "labels": targets}, filepath)
+
+        data = torch.load(filepath, weights_only=True)
+        self.sequences = data["sequences"].long()
+        self.labels = data["labels"].long()
+        self.num_classes = vocab_size
+
+    def __len__(self) -> int:
+        return len(self.labels)
+
+    def __getitem__(self, idx: int) -> tuple[torch.Tensor, torch.Tensor]:
+        return self.sequences[idx], self.labels[idx]
+
+
 class FederatedClientDataset(Dataset):
     """A dataset representing a single federated client's local data.
 

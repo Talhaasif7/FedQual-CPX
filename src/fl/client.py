@@ -140,7 +140,7 @@ class FederatedClient:
                 batch_y = batch_y.to(self.device)
 
                 optimizer.zero_grad()
-                outputs = local_model(batch_x)
+                outputs = self._forward_logits(local_model, batch_x)
                 loss = criterion(outputs, batch_y)
                 loss.backward()
                 optimizer.step()
@@ -178,6 +178,15 @@ class FederatedClient:
             train_time_ms=train_time,
         )
 
+    def _forward_logits(self, model: nn.Module, batch_x: torch.Tensor) -> torch.Tensor:
+        """Forward pass extracting logits whether model outputs tensor or tuple."""
+        out = model(batch_x)
+        if isinstance(out, tuple):
+            out = out[0]
+        if out.dim() == 3:
+            out = out[:, -1, :]
+        return out
+
     @torch.no_grad()
     def _evaluate_loss(
         self,
@@ -196,7 +205,7 @@ class FederatedClient:
         for batch_x, batch_y in loader:
             batch_x = batch_x.to(self.device)
             batch_y = batch_y.to(self.device)
-            outputs = model(batch_x)
+            outputs = self._forward_logits(model, batch_x)
             loss = criterion(outputs, batch_y)
             total_loss += loss.item() * len(batch_y)
             total_samples += len(batch_y)
@@ -221,7 +230,7 @@ class FederatedClient:
         for batch_x, batch_y in loader:
             batch_x = batch_x.to(self.device)
             batch_y = batch_y.to(self.device)
-            outputs = model(batch_x)
+            outputs = self._forward_logits(model, batch_x)
             _, predicted = outputs.max(1)
             correct += predicted.eq(batch_y).sum().item()
             total += len(batch_y)

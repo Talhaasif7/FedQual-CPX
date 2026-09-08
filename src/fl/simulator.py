@@ -33,6 +33,8 @@ from torch.utils.data import DataLoader
 from src.data.drift import DriftConfig, DriftManager, DriftedDataset
 from src.data.loaders import (
     CIFAR10Dataset,
+    FEMNISTDataset,
+    ShakespeareDataset,
     FederatedClientDataset,
     get_client_dataloader,
 )
@@ -97,12 +99,28 @@ class FederatedSimulator:
         # ── 1. Load dataset ──
         print("\n[1/5] Loading dataset ...")
         dataset_cfg = self.cfg.dataset
-        self.train_dataset = CIFAR10Dataset(
-            processed_dir=dataset_cfg.processed_dir, train=True
-        )
-        self.test_dataset = CIFAR10Dataset(
-            processed_dir=dataset_cfg.processed_dir, train=False
-        )
+        dname = dataset_cfg.name.lower()
+        if dname == "femnist":
+            self.train_dataset = FEMNISTDataset(
+                processed_dir=dataset_cfg.processed_dir, train=True
+            )
+            self.test_dataset = FEMNISTDataset(
+                processed_dir=dataset_cfg.processed_dir, train=False
+            )
+        elif dname == "shakespeare":
+            self.train_dataset = ShakespeareDataset(
+                processed_dir=dataset_cfg.processed_dir, train=True
+            )
+            self.test_dataset = ShakespeareDataset(
+                processed_dir=dataset_cfg.processed_dir, train=False
+            )
+        else:
+            self.train_dataset = CIFAR10Dataset(
+                processed_dir=dataset_cfg.processed_dir, train=True
+            )
+            self.test_dataset = CIFAR10Dataset(
+                processed_dir=dataset_cfg.processed_dir, train=False
+            )
         print(f"  Train: {len(self.train_dataset)} samples")
         print(f"  Test:  {len(self.test_dataset)} samples")
 
@@ -120,7 +138,7 @@ class FederatedSimulator:
         self.client_indices = partitioner.partition(labels)
 
         # Save partition
-        partition_dir = Path("data/partitions/cifar10") / f"alpha{part_cfg.alpha}_seed{self.seed}"
+        partition_dir = Path("data/partitions") / dname / f"alpha{part_cfg.alpha}_seed{self.seed}"
         partitioner.save_partition(self.client_indices, labels, partition_dir)
 
         # ── 3. Create clients with drift wrapper ──

@@ -83,19 +83,20 @@ def create_model(name: str, num_classes: int = 10) -> nn.Module:
     """Factory function to create models by name.
 
     Args:
-        name: Model name — 'SmallCNN', 'FEMNISTCNN'.
-        num_classes: Number of output classes.
+        name: Model name — 'SmallCNN', 'FEMNISTCNN', 'ShakespeareLSTM'.
+        num_classes: Number of output classes (or vocab_size for LSTM).
 
     Returns:
         PyTorch nn.Module.
     """
-    models = {
-        "SmallCNN": SmallCNN,
-        "FEMNISTCNN": FEMNISTCNN,
-    }
+    if name == "SmallCNN":
+        return SmallCNN(num_classes=num_classes)
+    elif name == "FEMNISTCNN":
+        return FEMNISTCNN(num_classes=num_classes)
+    elif name == "ShakespeareLSTM":
+        from src.models.lstm import ShakespeareLSTM
+        return ShakespeareLSTM(vocab_size=num_classes)
 
-    if name not in models:
-        raise ValueError(f"Unknown model: {name}. Available: {list(models.keys())}")
+    raise ValueError(f"Unknown model: {name}. Available: ['SmallCNN', 'FEMNISTCNN', 'ShakespeareLSTM']")
 
-    return models[name](num_classes=num_classes)
 

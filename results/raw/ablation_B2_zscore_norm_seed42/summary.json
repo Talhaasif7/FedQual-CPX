@@ -1,0 +1,90 @@
+{
+  "experiment_id": "ablation_B2_zscore_norm_seed42",
+  "best_accuracy": 0.3205,
+  "final_accuracy": 0.3205,
+  "total_rounds": 15,
+  "total_time_seconds": 599.05,
+  "participation": {
+    "gini": 0.29,
+    "entropy": 4.1266,
+    "coverage": 1.0,
+    "min_participations": 1,
+    "max_participations": 8
+  },
+  "reproducibility": {
+    "timestamp": "2026-09-08T09:27:30.594190+00:00",
+    "python_version": "3.13.13 (tags/v3.13.13:01104ce, Apr  7 2026, 19:25:48) [MSC v.1944 64 bit (AMD64)]",
+    "torch_version": "2.14.0+cpu",
+    "cuda_available": "False",
+    "git_commit": "82b60ea998e8f1ae3a35631b4d3e34a918c85606"
+  },
+  "config": {
+    "seed": 42,
+    "dataset": {
+      "name": "CIFAR10",
+      "processed_dir": "data/processed/cifar10",
+      "num_classes": 10,
+      "image_shape": [
+        32,
+        32,
+        3
+      ]
+    },
+    "partition": {
+      "method": "dirichlet",
+      "alpha": 0.5,
+      "num_clients": 20,
+      "seed": 42,
+      "min_samples_per_client": 10,
+      "val_fraction": 0.1
+    },
+    "model": {
+      "name": "SmallCNN",
+      "num_classes": 10
+    },
+    "training": {
+      "local_epochs": 1,
+      "batch_size": 32,
+      "optimizer": "sgd",
+      "learning_rate": 0.01,
+      "momentum": 0.9,
+      "weight_decay": 0.0001
+    },
+    "fl": {
+      "num_rounds": 15,
+      "num_clients": 20,
+      "clients_per_round": 5,
+      "aggregation": "fedavg"
+    },
+    "drift": {
+      "enabled": true,
+      "drift_type": "class_swap",
+      "drift_round": 8,
+      "drift_fraction": 0.3,
+      "severity": "medium"
+    },
+    "selection": {
+      "method": "fedqual_cpx",
+      "detector_name": "cusum",
+      "warmup_rounds": 5,
+      "epsilon_min": 0.08,
+      "epsilon_max": 0.35,
+      "use_uncertainty": true,
+      "use_adaptive_epsilon": true,
+      "use_change_bonus": true
+    },
+    "normalization": {
+      "method": "zscore",
+      "z_max": 3.0,
+      "epsilon": 1e-08
+    },
+    "evaluation": {
+      "test_every": 1,
+      "save_checkpoint_every": 100
+    },
+    "output": {
+      "results_dir": "results/raw",
+      "save_checkpoints": false
+    }
+  }
+}

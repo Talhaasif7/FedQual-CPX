@@ -81,8 +81,62 @@ def test_non_drift_control():
     assert dm.get_drift_info()["enabled"] is False
 
 
+def test_feature_shift_alias():
+    """Verify that feature_shift alias works equivalently to feature_noise and clamps to [0, 1]."""
+    x = torch.zeros(10, 3, 32, 32)
+    y = torch.zeros(10, dtype=torch.long)
+    base_ds = TensorDataset(x, y)
+
+    cfg = DriftConfig(
+        enabled=True,
+        drift_type="feature_shift",
+        drift_round=10,
+        drift_clients=[0],
+        severity="medium",
+    )
+    dm = DriftManager(num_clients=5, config=cfg)
+    ds = dm.wrap_client_dataset(0, base_ds, current_round=15)
+    assert ds.is_active
+    sample_x, sample_y = ds[0]
+    assert not torch.all(sample_x == 0.0)
+    assert torch.all(sample_x >= 0.0) and torch.all(sample_x <= 1.0)
+
+
+def test_gradual_drift_probability_interpolation():
+    """Verify that gradual drift linearly scales drift probability between tau_start and tau_end."""
+    x = torch.zeros(100, 3, 32, 32)
+    y = torch.zeros(100, dtype=torch.long)
+    base_ds = TensorDataset(x, y)
+
+    cfg = DriftConfig(
+        enabled=True,
+        drift_type="gradual_drift",
+        drift_round=30,
+        drift_end_round=70,
+        drift_clients=[0],
+        severity="medium",
+    )
+    dm = DriftManager(num_clients=5, config=cfg)
+    ds = dm.wrap_client_dataset(0, base_ds, current_round=20)
+    assert not ds.is_active
+    assert ds.drift_prob == 0.0
+
+    # At round 50 (midway between 30 and 70), prob should be 0.5
+    client_dict = {0: ds}
+    dm.update_round(50, client_dict)
+    assert ds.is_active
+    assert abs(ds.drift_prob - 0.5) < 1e-4
+
+    # At round 70, prob should be 1.0
+    dm.update_round(70, client_dict)
+    assert ds.is_active
+    assert abs(ds.drift_prob - 1.0) < 1e-4
+
+
 if __name__ == "__main__":
     test_drift_inactive_before_tau()
     test_drifted_dataset_wrapping()
     test_non_drift_control()
+    test_feature_shift_alias()
+    test_gradual_drift_probability_interpolation()
     print("All drift unit tests passed!")
