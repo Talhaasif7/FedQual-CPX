@@ -1,0 +1,102 @@
+[
+  {
+    "key": "A1_cusum_full",
+    "group": "Detector",
+    "description": "Full FedQual-CPX (CUSUM Detector + Robust MAD + Adaptive Exploration)",
+    "best_accuracy": 0.3262,
+    "final_accuracy": 0.3245,
+    "gini": 0.254,
+    "entropy": 4.1732,
+    "coverage": 1.0
+  },
+  {
+    "key": "A2_page_hinckley",
+    "group": "Detector",
+    "description": "Page-Hinckley Detector (FLEX Detector + Robust MAD)",
+    "best_accuracy": 0.3262,
+    "final_accuracy": 0.3245,
+    "gini": 0.254,
+    "entropy": 4.1732,
+    "coverage": 1.0
+  },
+  {
+    "key": "A3_ewma_detector",
+    "group": "Detector",
+    "description": "EWMA Detector + Robust MAD",
+    "best_accuracy": 0.3124,
+    "final_accuracy": 0.3124,
+    "gini": 0.2793,
+    "entropy": 4.1343,
+    "coverage": 1.0
+  },
+  {
+    "key": "A4_no_detector",
+    "group": "Detector",
+    "description": "No Detector (Adaptive Exploration on raw utility without change events)",
+    "best_accuracy": 0.3164,
+    "final_accuracy": 0.3164,
+    "gini": 0.3153,
+    "entropy": 4.0807,
+    "coverage": 1.0
+  },
+  {
+    "key": "B1_robust_mad",
+    "group": "Normalization",
+    "description": "Robust MAD Normalization (Proposed)",
+    "best_accuracy": 0.3198,
+    "final_accuracy": 0.3198,
+    "gini": 0.278,
+    "entropy": 4.1413,
+    "coverage": 1.0
+  },
+  {
+    "key": "B2_zscore_norm",
+    "group": "Normalization",
+    "description": "Standard Z-Score Normalization",
+    "best_accuracy": 0.3205,
+    "final_accuracy": 0.3205,
+    "gini": 0.29,
+    "entropy": 4.1266,
+    "coverage": 1.0
+  },
+  {
+    "key": "B3_minmax_norm",
+    "group": "Normalization",
+    "description": "Min-Max Normalization",
+    "best_accuracy": 0.2981,
+    "final_accuracy": 0.2904,
+    "gini": 0.2167,
+    "entropy": 4.2089,
+    "coverage": 1.0
+  },
+  {
+    "key": "B4_no_norm",
+    "group": "Normalization",
+    "description": "No Normalization (Raw Utilities)",
+    "best_accuracy": 0.2971,
+    "final_accuracy": 0.2971,
+    "gini": 0.23,
+    "entropy": 4.1999,
+    "coverage": 1.0
+  },
+  {
+    "key": "C1_no_uncertainty",
+    "group": "Exploration",
+    "description": "No Uncertainty Bonus (Uncertainty term disabled)",
+    "best_accuracy": 0.2966,
+    "final_accuracy": 0.292,
+    "gini": 0.278,
+    "entropy": 4.1384,
+    "coverage": 1.0
+  },
+  {
+    "key": "C2_no_change_bonus",
+    "group": "Exploration",
+    "description": "No Change Bonus (Change detection bonus disabled)",
+    "best_accuracy": 0.3198,
+    "final_accuracy": 0.3198,
+    "gini": 0.278,
+    "entropy": 4.1413,
+    "coverage": 1.0
+  }
+]

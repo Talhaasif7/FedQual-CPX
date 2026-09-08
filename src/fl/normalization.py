@@ -85,6 +85,59 @@ class RobustNormalizer:
         return float(np.clip(z, -self.z_max, self.z_max))
 
 
+class ZScoreNormalizer:
+    """Standard Mean/Std Z-Score Normalizer for ablation studies."""
+
+    def __init__(self, z_max: float = 3.0, epsilon: float = 1e-8) -> None:
+        self.z_max = float(z_max)
+        self.epsilon = float(epsilon)
+
+    def normalize_batch(self, utilities: list[float] | np.ndarray) -> np.ndarray:
+        arr = np.asarray(utilities, dtype=np.float64)
+        if len(arr) <= 1:
+            return np.zeros_like(arr, dtype=np.float64)
+        mean = np.mean(arr)
+        std = np.std(arr) + self.epsilon
+        z = (arr - mean) / std
+        return np.clip(z, -self.z_max, self.z_max)
+
+    def normalize_single(self, value: float, reference_utilities: list[float] | np.ndarray) -> float:
+        arr = np.asarray(reference_utilities, dtype=np.float64)
+        valid = arr[~np.isnan(arr)]
+        if len(valid) <= 1:
+            return 0.0
+        mean = np.mean(valid)
+        std = np.std(valid) + self.epsilon
+        z = (value - mean) / std
+        return float(np.clip(z, -self.z_max, self.z_max))
+
+
+class MinMaxNormalizer:
+    """Min-Max Normalizer [0, 1] for ablation studies."""
+
+    def __init__(self, epsilon: float = 1e-8) -> None:
+        self.epsilon = float(epsilon)
+
+    def normalize_batch(self, utilities: list[float] | np.ndarray) -> np.ndarray:
+        arr = np.asarray(utilities, dtype=np.float64)
+        if len(arr) <= 1:
+            return np.zeros_like(arr, dtype=np.float64)
+        min_val = np.min(arr)
+        max_val = np.max(arr)
+        denom = (max_val - min_val) + self.epsilon
+        return (arr - min_val) / denom
+
+    def normalize_single(self, value: float, reference_utilities: list[float] | np.ndarray) -> float:
+        arr = np.asarray(reference_utilities, dtype=np.float64)
+        valid = arr[~np.isnan(arr)]
+        if len(valid) <= 1:
+            return 0.5
+        min_val = np.min(valid)
+        max_val = np.max(valid)
+        denom = (max_val - min_val) + self.epsilon
+        return float((value - min_val) / denom)
+
+
 class IdentityNormalizer:
     """Pass-through normalizer (raw utility) for ablation studies (Section 31 A3)."""
 
@@ -99,12 +152,16 @@ def create_normalizer(
     method: str = "robust_mad",
     z_max: float = 3.0,
     epsilon: float = 1e-8,
-) -> RobustNormalizer | IdentityNormalizer:
+) -> RobustNormalizer | ZScoreNormalizer | MinMaxNormalizer | IdentityNormalizer:
     """Factory function for normalizers."""
     method_lower = method.lower()
     if method_lower in ("none", "identity", "raw"):
         return IdentityNormalizer()
     elif method_lower in ("robust_mad", "mad"):
         return RobustNormalizer(z_max=z_max, epsilon=epsilon)
+    elif method_lower in ("zscore", "z_score", "standard"):
+        return ZScoreNormalizer(z_max=z_max, epsilon=epsilon)
+    elif method_lower in ("minmax", "min_max"):
+        return MinMaxNormalizer(epsilon=epsilon)
     else:
-        raise ValueError(f"Unknown normalization method: '{method}'. Choose 'robust_mad' or 'none'.")
+        raise ValueError(f"Unknown normalization method: '{method}'. Choose 'robust_mad', 'zscore', 'minmax', or 'none'.")

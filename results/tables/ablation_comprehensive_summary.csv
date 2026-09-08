@@ -1,0 +1,11 @@
+key,group,description,best_accuracy,final_accuracy,gini,entropy,coverage
+A1_cusum_full,Detector,Full FedQual-CPX (CUSUM Detector + Robust MAD + Adaptive Exploration),0.3262,0.3245,0.254,4.1732,1.0
+A2_page_hinckley,Detector,Page-Hinckley Detector (FLEX Detector + Robust MAD),0.3262,0.3245,0.254,4.1732,1.0
+A3_ewma_detector,Detector,EWMA Detector + Robust MAD,0.3124,0.3124,0.2793,4.1343,1.0
+A4_no_detector,Detector,No Detector (Adaptive Exploration on raw utility without change events),0.3164,0.3164,0.3153,4.0807,1.0
+B1_robust_mad,Normalization,Robust MAD Normalization (Proposed),0.3198,0.3198,0.278,4.1413,1.0
+B2_zscore_norm,Normalization,Standard Z-Score Normalization,0.3205,0.3205,0.29,4.1266,1.0
+B3_minmax_norm,Normalization,Min-Max Normalization,0.2981,0.2904,0.2167,4.2089,1.0
+B4_no_norm,Normalization,No Normalization (Raw Utilities),0.2971,0.2971,0.23,4.1999,1.0
+C1_no_uncertainty,Exploration,No Uncertainty Bonus (Uncertainty term disabled),0.2966,0.292,0.278,4.1384,1.0
+C2_no_change_bonus,Exploration,No Change Bonus (Change detection bonus disabled),0.3198,0.3198,0.278,4.1413,1.0
