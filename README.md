@@ -229,6 +229,22 @@ e:\FedQual CPX\
 2. **Fairness vs Accuracy Trade-off**: Fixed exploration ($B4$) mitigates starvation ($Gini = 0.705$) but pays a substantial accuracy penalty (32.35%) due to unguided random perturbation.
 3. **Adaptive Change-Point Balancing**: FedQual-CPX ($B8$) achieves **100% full client coverage** and halves the Gini inequality coefficient to **0.4846** compared to greedy baselines, ensuring no client is permanently abandoned.
 
+### 8.7 Case Study 7: Phase 14 Robustness & Sensitivity Suite (Non-IID $\alpha$ & Drift Severity $f_{\text{drift}}$)
+*Evaluated across varying Dirichlet heterogeneity and drift proportions ($N=30, K=5, T=30, \tau=15$)*:
+
+| Dimension | Condition | Random / FedAvg | FedQual-CPX (Proposed) | Advantage ($\Delta$) | Coverage |
+|---|---|:---:|:---:|:---:|:---:|
+| **Non-IID Heterogeneity** | $\alpha = 0.1$ (Extreme Non-IID) | 10.00% | 10.00% | +0.00% | 100.0% |
+| | $\alpha = 0.5$ (Standard Non-IID) | 40.84% | **42.27%** | **+1.43%** | 100.0% |
+| | $\alpha = 1.0$ (Moderate Non-IID) | 40.55% | **44.13%** | **+3.58%** | 100.0% |
+| **Drift Severity** | $f_{\text{drift}} = 0.1$ (10% Drifting) | 41.25% | **43.14%** | **+1.89%** | 100.0% |
+| | $f_{\text{drift}} = 0.3$ (30% Drifting) | 40.84% | **42.27%** | **+1.43%** | 100.0% |
+| | $f_{\text{drift}} = 0.5$ (50% Drifting) | 35.75% | **38.16%** | **+2.41%** | 100.0% |
+
+**Key Robustness Insights**:
+1. **Resilience Under Severe Drift**: When 50% of all clients drift ($f_{\text{drift}}=0.5$), FedQual-CPX maintains a **+2.41% accuracy margin** over FedAvg (38.16% vs 35.75%) by rapidly tracking and dampening corrupted updates.
+2. **Consistent Scalability**: Across both skewed ($\alpha=0.5$) and balanced ($\alpha=1.0$) partitions, FedQual-CPX expands its performance lead from **+1.43% to +3.58%** while maintaining 100% full client coverage.
+
 ---
 
 ## 9. GPU Execution Guide (Google Colab / Kaggle Free T4 Tier)
