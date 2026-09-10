@@ -98,7 +98,7 @@ class FEMNISTDataset(Dataset):
         processed_dir: str | Path = "data/processed/femnist",
         train: bool = True,
         transform: Any | None = None,
-        auto_download: bool = False,
+        auto_download: bool = True,
     ) -> None:
         processed_dir = Path(processed_dir)
         filename = "train.pt" if train else "test.pt"
