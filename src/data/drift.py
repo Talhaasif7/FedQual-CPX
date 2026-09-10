@@ -160,8 +160,11 @@ class DriftManager:
                     mapping[c2] = c1
 
                 def make_swap(m: dict[int, int]):
-                    def _transform(x: torch.Tensor, y: int) -> tuple[torch.Tensor, int]:
-                        return x, m.get(int(y), int(y))
+                    def _transform(x: torch.Tensor, y: Any) -> tuple[torch.Tensor, Any]:
+                        mapped = m.get(int(y), int(y))
+                        if isinstance(y, torch.Tensor):
+                            return x, torch.tensor(mapped, dtype=y.dtype, device=y.device)
+                        return x, mapped
                     return _transform
 
                 self._transforms[client_id] = make_swap(mapping)
@@ -171,7 +174,7 @@ class DriftManager:
                 noise_std = self.FEATURE_NOISE_STD.get(self.cfg.severity, 0.35)
 
                 def make_feature_noise(std: float, c_rng: np.random.Generator):
-                    def _transform(x: torch.Tensor, y: int) -> tuple[torch.Tensor, int]:
+                    def _transform(x: torch.Tensor, y: Any) -> tuple[torch.Tensor, Any]:
                         noise = torch.randn_like(x) * std
                         return torch.clamp(x + noise, 0.0, 1.0), y
                     return _transform
@@ -184,9 +187,11 @@ class DriftManager:
                 n_classes = self.num_classes
 
                 def make_label_noise(rate: float, c_rng: np.random.Generator):
-                    def _transform(x: torch.Tensor, y: int) -> tuple[torch.Tensor, int]:
+                    def _transform(x: torch.Tensor, y: Any) -> tuple[torch.Tensor, Any]:
                         if c_rng.random() < rate:
                             new_y = int(c_rng.integers(0, n_classes))
+                            if isinstance(y, torch.Tensor):
+                                return x, torch.tensor(new_y, dtype=y.dtype, device=y.device)
                             return x, new_y
                         return x, y
                     return _transform

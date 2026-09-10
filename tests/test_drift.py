@@ -133,10 +133,38 @@ def test_gradual_drift_probability_interpolation():
     assert abs(ds.drift_prob - 1.0) < 1e-4
 
 
+def test_gradual_drift_mixed_type_dataloader_collation():
+    """Regression test: verify DataLoader collates mixed (drifted + undrifted) samples without TypeError."""
+    from torch.utils.data import DataLoader
+    x = torch.randn(64, 3, 32, 32)
+    y = torch.randint(0, 10, (64,), dtype=torch.long)
+    base_ds = TensorDataset(x, y)
+
+    cfg = DriftConfig(
+        enabled=True,
+        drift_type="gradual_drift",
+        drift_round=30,
+        drift_end_round=70,
+        drift_clients=[0],
+        severity="medium",
+    )
+    dm = DriftManager(num_clients=5, config=cfg)
+    ds = dm.wrap_client_dataset(0, base_ds, current_round=50)
+    loader = DataLoader(ds, batch_size=32, shuffle=True)
+
+    batches = list(loader)
+    assert len(batches) == 2
+    for bx, by in batches:
+        assert isinstance(by, torch.Tensor)
+        assert by.shape == (32,)
+        assert by.dtype == torch.long
+
+
 if __name__ == "__main__":
     test_drift_inactive_before_tau()
     test_drifted_dataset_wrapping()
     test_non_drift_control()
     test_feature_shift_alias()
     test_gradual_drift_probability_interpolation()
+    test_gradual_drift_mixed_type_dataloader_collation()
     print("All drift unit tests passed!")
