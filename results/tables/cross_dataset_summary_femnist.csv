@@ -1,0 +1,5 @@
+dataset,method,method_key,final_acc_mean,final_acc_ci_95,recovery_acc_mean,recovery_acc_ci_95,gini_mean,coverage_mean,seeds
+femnist,Random / FedAvg (B0),random,76.13,"[75.10, 76.88]",69.97,"[69.61, 70.32]",0.1708,100.0,"[42, 43, 44, 45, 46]"
+femnist,Utility Greedy (B2),utility_greedy,72.08,"[71.01, 73.06]",67.48,"[66.82, 68.29]",0.8801,19.4,"[42, 43, 44, 45, 46]"
+femnist,"Fixed Exploration (B4, eps=0.15)",fixed_exploration,73.88,"[71.98, 75.03]",69.8,"[69.22, 70.37]",0.5815,92.2,"[42, 43, 44, 45, 46]"
+femnist,"FedQual-CPX (B8, Proposed)",fedqual_cpx,74.79,"[73.79, 75.78]",69.07,"[68.50, 69.65]",0.4038,100.0,"[42, 43, 44, 45, 46]"
