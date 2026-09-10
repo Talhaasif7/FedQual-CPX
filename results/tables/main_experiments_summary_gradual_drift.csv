@@ -1,0 +1,7 @@
+method,description,drift_type,num_seeds,final_acc_mean,final_acc_ci_95,recovery_acc_mean,recovery_acc_ci_95,gini_mean,gini_ci_95,coverage_mean,coverage_ci_95
+random,Random / FedAvg (B0),gradual_drift,5,36.79,"[33.46, 39.45]",31.53,"[29.62, 32.87]",0.1708,"[0.1625, 0.1799]",100.0,"[100.0, 100.0]"
+utility_greedy,Utility Greedy (B2),gradual_drift,5,37.23,"[33.76, 39.87]",31.54,"[28.85, 34.80]",0.8977,"[0.8951, 0.8996]",11.6,"[10.6, 12.4]"
+sliding_window,"Sliding Window (B3, W=10)",gradual_drift,5,37.58,"[35.33, 39.43]",32.67,"[30.68, 35.28]",0.8998,"[0.8995, 0.9000]",10.2,"[10.0, 10.6]"
+fixed_exploration,"Fixed Exploration (B4, eps=0.15)",gradual_drift,5,35.16,"[32.14, 37.65]",31.41,"[29.68, 33.61]",0.7013,"[0.6745, 0.7242]",90.6,"[89.8, 91.4]"
+page_hinckley_adaptive,"Page-Hinckley Adaptive (B6, FLEX)",gradual_drift,5,33.37,"[32.22, 34.36]",30.9,"[29.45, 32.03]",0.4962,"[0.4782, 0.5154]",100.0,"[100.0, 100.0]"
+fedqual_cpx,FedQual-CPX (B8 - Proposed CUSUM),gradual_drift,5,33.37,"[32.22, 34.36]",30.9,"[29.45, 32.03]",0.4962,"[0.4782, 0.5154]",100.0,"[100.0, 100.0]"

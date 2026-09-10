@@ -1,0 +1,7 @@
+method,description,drift_type,num_seeds,final_acc_mean,final_acc_ci_95,recovery_acc_mean,recovery_acc_ci_95,gini_mean,gini_ci_95,coverage_mean,coverage_ci_95
+random,Random / FedAvg (B0),feature_shift,5,36.74,"[32.96, 39.43]",26.94,"[25.21, 29.18]",0.1708,"[0.1625, 0.1799]",100.0,"[100.0, 100.0]"
+utility_greedy,Utility Greedy (B2),feature_shift,5,37.25,"[34.88, 39.90]",28.18,"[26.02, 31.07]",0.8983,"[0.8971, 0.8993]",12.0,"[11.2, 12.8]"
+sliding_window,"Sliding Window (B3, W=10)",feature_shift,5,37.41,"[35.19, 39.88]",27.95,"[26.02, 30.55]",0.8996,"[0.8992, 0.9000]",10.4,"[10.0, 10.8]"
+fixed_exploration,"Fixed Exploration (B4, eps=0.15)",feature_shift,5,32.86,"[28.52, 36.40]",25.21,"[22.33, 28.15]",0.7075,"[0.6805, 0.7258]",90.2,"[89.4, 91.0]"
+page_hinckley_adaptive,"Page-Hinckley Adaptive (B6, FLEX)",feature_shift,5,35.44,"[33.87, 37.00]",25.65,"[22.98, 27.86]",0.5005,"[0.4754, 0.5201]",100.0,"[100.0, 100.0]"
+fedqual_cpx,FedQual-CPX (B8 - Proposed CUSUM),feature_shift,5,35.44,"[33.87, 37.00]",25.65,"[22.98, 27.86]",0.5005,"[0.4754, 0.5201]",100.0,"[100.0, 100.0]"
