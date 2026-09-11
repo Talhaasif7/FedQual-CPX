@@ -1,0 +1,50 @@
+[
+  {
+    "dataset": "shakespeare",
+    "method": "Random / FedAvg (B0)",
+    "method_key": "random",
+    "final_acc_mean": 1.0,
+    "final_acc_ci_95": "[0.80, 1.26]",
+    "recovery_acc_mean": 1.1,
+    "recovery_acc_ci_95": "[0.93, 1.24]",
+    "gini_mean": 0.1708,
+    "coverage_mean": 100.0,
+    "seeds": [42, 43, 44, 45, 46]
+  },
+  {
+    "dataset": "shakespeare",
+    "method": "Utility Greedy (B2)",
+    "method_key": "utility_greedy",
+    "final_acc_mean": 1.05,
+    "final_acc_ci_95": "[0.87, 1.22]",
+    "recovery_acc_mean": 1.07,
+    "recovery_acc_ci_95": "[1.00, 1.14]",
+    "gini_mean": 0.9,
+    "coverage_mean": 10.0,
+    "seeds": [42, 43, 44, 45, 46]
+  },
+  {
+    "dataset": "shakespeare",
+    "method": "Fixed Exploration (B4, eps=0.15)",
+    "method_key": "fixed_exploration",
+    "final_acc_mean": 1.1,
+    "final_acc_ci_95": "[0.82, 1.38]",
+    "recovery_acc_mean": 1.21,
+    "recovery_acc_ci_95": "[1.06, 1.34]",
+    "gini_mean": 0.7097,
+    "coverage_mean": 90.4,
+    "seeds": [42, 43, 44, 45, 46]
+  },
+  {
+    "dataset": "shakespeare",
+    "method": "FedQual-CPX (B8, Proposed)",
+    "method_key": "fedqual_cpx",
+    "final_acc_mean": 1.19,
+    "final_acc_ci_95": "[1.00, 1.45]",
+    "recovery_acc_mean": 1.14,
+    "recovery_acc_ci_95": "[1.08, 1.18]",
+    "gini_mean": 0.5401,
+    "coverage_mean": 100.0,
+    "seeds": [42, 43, 44, 45, 46]
+  }
+]

@@ -335,9 +335,162 @@ def generate_figure5_ablation(ablation_json: Path, output_dir: Path) -> None:
     print(f"[Fig 5] Generated ablation breakdown figure: {fig_path}")
 
 
+def generate_figure6_multi_drift_comparison(tables_dir: Path, output_dir: Path) -> None:
+    """Figure 6: Multi-Drift Modality Comparison (Abrupt vs. Feature Shift vs. Gradual Drift)."""
+    drift_files = [
+        ("Abrupt Swap", tables_dir / "main_experiments_summary_class_swap.json"),
+        ("Feature Shift", tables_dir / "main_experiments_summary_feature_shift.json"),
+        ("Gradual Drift", tables_dir / "main_experiments_summary_gradual_drift.json"),
+    ]
+
+    if not all(p.exists() for _, p in drift_files):
+        print("[Warning] One or more multi-drift summary json files missing. Skipping Fig 6.")
+        return
+
+    methods = ["random", "utility_greedy", "fixed_exploration", "fedqual_cpx"]
+    drift_labels = [label for label, _ in drift_files]
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11, 4.8))
+
+    x = np.arange(len(drift_labels))
+    width = 0.18
+
+    for idx, m in enumerate(methods):
+        accs = []
+        ginis = []
+        for _, path in drift_files:
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            entry = next((r for r in data if r["method"] == m), None)
+            if entry:
+                accs.append(entry["final_acc_mean"])
+                ginis.append(entry["gini_mean"])
+            else:
+                accs.append(0.0)
+                ginis.append(0.0)
+
+        offset = (idx - 1.5) * width
+        ax1.bar(
+            x + offset,
+            accs,
+            width,
+            label=LABELS.get(m, m),
+            color=COLORS.get(m, "#333333"),
+            edgecolor="black",
+            linewidth=0.8,
+            alpha=0.85,
+        )
+        ax2.bar(
+            x + offset,
+            ginis,
+            width,
+            label=LABELS.get(m, m),
+            color=COLORS.get(m, "#333333"),
+            edgecolor="black",
+            linewidth=0.8,
+            alpha=0.85,
+        )
+
+    ax1.set_xticks(x)
+    ax1.set_xticklabels(drift_labels)
+    ax1.set_ylabel("Final Test Accuracy (%)")
+    ax1.set_title("(a) Accuracy across Drift Regimes")
+    ax1.legend(loc="lower right")
+    ax1.set_ylim(25, 42)
+
+    ax2.set_xticks(x)
+    ax2.set_xticklabels(drift_labels)
+    ax2.set_ylabel("Participation Gini Index (Lower = Fairer)")
+    ax2.set_title("(b) Client Starvation & Inequality (Gini)")
+    ax2.legend(loc="upper left")
+    ax2.set_ylim(0.0, 1.05)
+
+    plt.tight_layout()
+    fig_path = output_dir / "fig6_multi_drift_comparison.png"
+    plt.savefig(fig_path, dpi=300)
+    plt.close()
+    print(f"[Fig 6] Generated multi-drift comparison figure: {fig_path}")
+
+
+def generate_figure7_leaf_benchmarks(tables_dir: Path, output_dir: Path) -> None:
+    """Figure 7: Cross-Dataset LEAF Benchmark (FEMNIST & Shakespeare)."""
+    femnist_json = tables_dir / "cross_dataset_summary_femnist.json"
+    shakespeare_json = tables_dir / "cross_dataset_summary_shakespeare.json"
+
+    if not femnist_json.exists() or not shakespeare_json.exists():
+        print("[Warning] FEMNIST or Shakespeare summary json missing. Skipping Fig 7.")
+        return
+
+    with open(femnist_json, "r", encoding="utf-8") as f:
+        femnist_data = json.load(f)
+    with open(shakespeare_json, "r", encoding="utf-8") as f:
+        shakespeare_data = json.load(f)
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11, 4.8))
+
+    methods = ["random", "utility_greedy", "fixed_exploration", "fedqual_cpx"]
+    labels = [LABELS.get(m, m) for m in methods]
+    colors = [COLORS.get(m, "#333333") for m in methods]
+
+    # FEMNIST Accuracy
+    femnist_accs = []
+    for m in methods:
+        entry = next((r for r in femnist_data if r.get("method_key") == m or r.get("method") == m), None)
+        femnist_accs.append(entry["final_acc_mean"] if entry else 0.0)
+
+    bars1 = ax1.bar(range(len(methods)), femnist_accs, color=colors, edgecolor="black", width=0.55, alpha=0.85)
+    for bar, val in zip(bars1, femnist_accs):
+        ax1.text(
+            bar.get_x() + bar.get_width() / 2.0,
+            bar.get_height() + 0.3,
+            f"{val:.2f}%",
+            ha="center",
+            va="bottom",
+            fontsize=9.5,
+            fontweight="bold",
+        )
+    ax1.set_xticks(range(len(methods)))
+    ax1.set_xticklabels(labels, rotation=20, ha="right")
+    ax1.set_ylabel("Final Test Accuracy (%)")
+    ax1.set_title("(a) LEAF FEMNIST (62-Class Vision CNN)")
+    ax1.set_ylim(65, 80)
+
+    # Shakespeare Accuracy
+    shakespeare_accs = []
+    for m in methods:
+        entry = next((r for r in shakespeare_data if r.get("method_key") == m or r.get("method") == m), None)
+        shakespeare_accs.append(entry["final_acc_mean"] if entry else 0.0)
+
+    bars2 = ax2.bar(range(len(methods)), shakespeare_accs, color=colors, edgecolor="black", width=0.55, alpha=0.85)
+    for bar, val in zip(bars2, shakespeare_accs):
+        ax2.text(
+            bar.get_x() + bar.get_width() / 2.0,
+            bar.get_height() + 0.02,
+            f"{val:.2f}%",
+            ha="center",
+            va="bottom",
+            fontsize=9.5,
+            fontweight="bold",
+        )
+    ax2.set_xticks(range(len(methods)))
+    ax2.set_xticklabels(labels, rotation=20, ha="right")
+    ax2.set_ylabel("Top-1 Character Accuracy (%)")
+    ax2.set_title("(b) LEAF Shakespeare (Recurrent LSTM)")
+    ax2.set_ylim(0.5, 1.45)
+
+    plt.tight_layout()
+    fig_path = output_dir / "fig7_leaf_benchmarks.png"
+    plt.savefig(fig_path, dpi=300)
+    plt.close()
+    print(f"[Fig 7] Generated LEAF benchmarks figure: {fig_path}")
+
+
 def generate_all_paper_figures() -> None:
+    import shutil
     output_dir = Path("results/figures")
     output_dir.mkdir(parents=True, exist_ok=True)
+    paper_dir = Path("paper/figures")
+    paper_dir.mkdir(parents=True, exist_ok=True)
     results_dir = Path("results/raw")
     tables_dir = Path("results/tables")
 
@@ -350,9 +503,15 @@ def generate_all_paper_figures() -> None:
     generate_figure3_learning_curves(results_dir, output_dir)
     generate_figure4_fairness_gini(tables_dir / "main_experiments_summary_class_swap.json", output_dir)
     generate_figure5_ablation(tables_dir / "ablation_comprehensive_summary.json", output_dir)
+    generate_figure6_multi_drift_comparison(tables_dir, output_dir)
+    generate_figure7_leaf_benchmarks(tables_dir, output_dir)
+
+    for png in output_dir.glob("*.png"):
+        shutil.copy2(png, paper_dir / png.name)
+    print(f"[Sync] Copied all publication figures to {paper_dir}/")
 
     print("=" * 80)
-    print(f"All figures generated successfully in {output_dir}/")
+    print(f"All figures generated successfully in {output_dir}/ and {paper_dir}/")
 
 
 if __name__ == "__main__":
