@@ -161,12 +161,14 @@ We evaluated the sensitivity of FedQual-CPX against severe non-IID heterogeneity
 ### 4.5 Phase 15: Participation Crossover Threshold ($\rho = K/N$)
 We investigated the participation ratio threshold $\rho = K / N$ where change-aware client selection transitions from lagging behind random sampling to outperforming it. By Theorem 1, round detection latency scales as $T_{\text{delay}} \ge \frac{N}{K} \tau_{\text{obs}}$. For typical parameters ($\tau_{\text{obs}} \approx 11$, $T - \tau = 50$, $\gamma = 0.6$), the critical threshold is $\rho^* \approx 0.36$. When $\rho < \rho^*$ ($\rho \in \{0.05, 0.10\}$), random sampling outperforms change-aware selection because unbiased sampling avoids observation latency.
 
-*Evaluated on CIFAR-10 ($N=100, T=100$) across 5 random seeds with 95% bootstrap confidence intervals*:
+*Evaluated on CIFAR-10 ($N=100, T=100$) with 95% bootstrap confidence intervals*:
 
 | Ratio ($\rho$) | Selection Policy | Final Test Acc (95% CI) | Post-Drift Recovery Acc (95% CI) | Participation Gini ($\downarrow$) | Client Coverage |
 |:---:|---|:---:|:---:|:---:|:---:|
+| **$\rho = 0.05$** | **Random / FedAvg (B0)** | **33.08% [30.87, 34.36]** | **24.01% [22.81, 26.31]** | **0.2432** | 99.3% |
+| $\rho = 0.05$ | FedQual-CPX (B8, Proposed) | 27.14% [23.56, 30.08] | 23.32% [21.94, 24.32] | 0.4347 | **100.0%** |
 | **$\rho = 0.10$** | **Random / FedAvg (B0)** | **36.80% [33.66, 39.31]** | **31.16% [29.69, 32.40]** | **0.1708** | **100.0%** |
-| $\rho = 0.10$ | FedQual-CPX (B8, Proposed) | 33.24% [31.66, 34.88] | 29.43% [28.12, 30.35] | 0.4846 | 100.0% |
+| $\rho = 0.10$ | FedQual-CPX (B8, Proposed) | 33.24% [31.66, 34.88] | 29.43% [28.12, 30.35] | 0.4846 | **100.0%** |
 
 ---
 

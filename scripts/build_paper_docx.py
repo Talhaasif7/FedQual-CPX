@@ -643,6 +643,8 @@ def build_docx(output_path: str = "paper.docx"):
             r.font.name = "Times New Roman"
 
     t6_data = [
+        ["rho = 0.05", "Random / FedAvg (B0)", "33.08 [30.9, 34.4]", "24.01 [22.8, 26.3]", "0.2432", "99.3%"],
+        ["rho = 0.05", "FedQual-CPX (B8)", "27.14 [23.6, 30.1]", "23.32 [21.9, 24.3]", "0.4347", "100.0%"],
         ["rho = 0.10", "Random / FedAvg (B0)", "36.80 [33.7, 39.3]", "31.16 [29.7, 32.4]", "0.1708", "100.0%"],
         ["rho = 0.10", "FedQual-CPX (B8)", "33.24 [31.7, 34.9]", "29.43 [28.1, 30.4]", "0.4846", "100.0%"],
     ]
@@ -660,7 +662,8 @@ def build_docx(output_path: str = "paper.docx"):
 
     add_p(
         "Table 6 validates this barrier on full multi-seed 100-round evaluations (N=100, T=100). "
-        "At rho = 0.10, Random selection achieves higher final accuracy (36.80% vs 33.24%) and higher post-drift recovery (31.16% vs 29.43%) with narrower participation inequality (0.1708 vs 0.4846). "
+        "At severe partial observability (rho = 0.05), Random selection achieves a 5.94% advantage in final accuracy (33.08% vs 27.14%) because the theoretical detection delay of 220 rounds exceeds the entire 100-round budget. "
+        "At rho = 0.10, Random selection continues to maintain its lead (36.80% vs 33.24%) and higher post-drift recovery (31.16% vs 29.43%) with narrower participation inequality (0.1708 vs 0.4846). "
         "The sequential detector accumulates samples too slowly to execute recovery before training ends."
     )
 
