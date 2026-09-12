@@ -452,7 +452,7 @@ def generate_figure7_leaf_benchmarks(tables_dir: Path, output_dir: Path) -> None
     ax1.set_xticks(range(len(methods)))
     ax1.set_xticklabels(labels, rotation=20, ha="right")
     ax1.set_ylabel("Final Test Accuracy (%)")
-    ax1.set_title("(a) LEAF FEMNIST (62-Class Vision CNN)")
+    ax1.set_title("(a) EMNIST-ByClass (62-Class Vision CNN)")
     ax1.set_ylim(65, 80)
 
     # Shakespeare Accuracy
@@ -475,14 +475,14 @@ def generate_figure7_leaf_benchmarks(tables_dir: Path, output_dir: Path) -> None
     ax2.set_xticks(range(len(methods)))
     ax2.set_xticklabels(labels, rotation=20, ha="right")
     ax2.set_ylabel("Top-1 Character Accuracy (%)")
-    ax2.set_title("(b) LEAF Shakespeare (Recurrent LSTM)")
+    ax2.set_title("(b) Shakespeare (Recurrent LSTM, Excluded)")
     ax2.set_ylim(0.5, 1.45)
 
     plt.tight_layout()
     fig_path = output_dir / "fig7_leaf_benchmarks.png"
     plt.savefig(fig_path, dpi=300)
     plt.close()
-    print(f"[Fig 7] Generated LEAF benchmarks figure: {fig_path}")
+    print(f"[Fig 7] Generated cross-dataset benchmarks figure: {fig_path}")
 
 
 def generate_all_paper_figures() -> None:

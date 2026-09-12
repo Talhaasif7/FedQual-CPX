@@ -87,10 +87,11 @@ class CIFAR10Dataset(Dataset):
 
 
 class FEMNISTDataset(Dataset):
-    """FEMNIST / EMNIST 62-class character dataset.
+    """EMNIST-ByClass (62-class) character dataset.
 
     Images: normalized to [0, 1] float32, shape [N, 1, 28, 28].
     Labels: [N] long integers, 62 classes (10 digits + 26 upper + 26 lower).
+    Partitioned across federated clients via Dirichlet non-IID distribution.
     """
 
     def __init__(
@@ -119,19 +120,24 @@ class FEMNISTDataset(Dataset):
                     emnist = EMNIST(root=str(raw_dir), split="byclass", train=train, download=True)
                     images = emnist.data.unsqueeze(1).float().div(255.0)  # [N, 1, 28, 28]
                     labels = emnist.targets.long()
+                    # Deterministically shuffle before truncating to preserve class balance across 62 classes
+                    perm = torch.randperm(len(labels), generator=torch.Generator().manual_seed(42 if train else 142))
                     n_samples = min(len(labels), 50000 if train else 10000)
-                    images = images[:n_samples]
-                    labels = labels[:n_samples]
+                    selected_idx = perm[:n_samples]
+                    images = images[selected_idx]
+                    labels = labels[selected_idx]
                     torch.save({"images": images, "labels": labels}, filepath)
-                except Exception:
-                    pass
+                except Exception as e:
+                    raise RuntimeError(
+                        f"Failed to download and process EMNIST-ByClass dataset: {e}\n"
+                        f"Please run 'python scripts/download_data.py --dataset femnist' with network access."
+                    ) from e
 
             if not filepath.exists():
-                rng = torch.Generator().manual_seed(42 if train else 142)
-                n_samples = 5000 if train else 1000
-                images = torch.rand(n_samples, 1, 28, 28, generator=rng)
-                labels = torch.randint(0, 62, (n_samples,), generator=rng)
-                torch.save({"images": images, "labels": labels}, filepath)
+                raise FileNotFoundError(
+                    f"Processed EMNIST-ByClass dataset not found at {filepath}.\n"
+                    f"Run: python scripts/download_data.py --dataset femnist"
+                )
 
         data = torch.load(filepath, weights_only=True)
         img = data["images"]
@@ -179,12 +185,11 @@ class ShakespeareDataset(Dataset):
             filepath = alt_filepath
 
         if not filepath.exists():
-            processed_dir.mkdir(parents=True, exist_ok=True)
-            rng = torch.Generator().manual_seed(42 if train else 142)
-            n_samples = 10000 if train else 2000
-            seqs = torch.randint(0, vocab_size, (n_samples, seq_len), generator=rng, dtype=torch.long)
-            targets = torch.randint(0, vocab_size, (n_samples,), generator=rng, dtype=torch.long)
-            torch.save({"sequences": seqs, "labels": targets}, filepath)
+            raise FileNotFoundError(
+                f"Processed Shakespeare dataset not found at {filepath}.\n"
+                f"Synthetic uniform tokenization has been permanently disabled per data integrity standards.\n"
+                f"Please provide authentic text sequences or evaluate on CIFAR-10 / EMNIST-ByClass."
+            )
 
         data = torch.load(filepath, weights_only=True)
         self.sequences = data["sequences"].long()

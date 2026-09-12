@@ -4,15 +4,11 @@ Phase 15: Participation Crossover Sweep (K/N Sweep).
 Investigates the participation ratio threshold rho = K / N where change-aware
 client selection transitions from lagging behind random sampling to outperforming it.
 
-Evaluates K in {5, 10, 25, 50, 100} at N = 100:
-    - K/N = 0.05 (K=5): Severe partial observability, delay ~100 rounds
-    - K/N = 0.10 (K=10): Standard FL setting, delay ~51 rounds
-    - K/N = 0.25 (K=25): Moderate observability, delay ~20 rounds
-    - K/N = 0.50 (K=50): High observability, delay ~10 rounds
-    - K/N = 1.00 (K=100): Full observability, delay ~5 rounds
+Evaluates K in {5, 10, 25, 50} at N = 100 with T = 100 communication rounds,
+drift at tau = 50, across multiple random seeds with 95% bootstrap confidence intervals.
 
 Outputs:
-    - Raw results in results/raw/kn_sweep/
+    - Raw results in results/raw/kn_k<K>_<method>_seed<S>/
     - Consolidated tables in results/tables/kn_sweep_summary.csv and .json
 """
 
@@ -23,12 +19,15 @@ import csv
 import json
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, Sequence
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+import numpy as np
+
 from src.fl.simulator import FederatedSimulator
 from src.utils.config import Config
+from src.evaluation.statistical_tests import compute_bootstrap_ci
 
 
 def build_kn_config(
@@ -36,6 +35,7 @@ def build_kn_config(
     method_key: str,
     num_rounds: int = 100,
     seed: int = 42,
+    test_every: int = 5,
 ) -> Config:
     """Construct configuration for a specific K/N condition."""
     selection_cfg: dict[str, Any] = {}
@@ -57,6 +57,7 @@ def build_kn_config(
             "use_uncertainty": True,
             "use_adaptive_epsilon": True,
             "use_change_bonus": True,
+            "change_explore_weight": 0.20,
         }
         norm_cfg = {"method": "robust_mad", "z_max": 3.0, "epsilon": 1e-8}
 
@@ -102,6 +103,9 @@ def build_kn_config(
             "severity": "medium",
             "drift_fraction": 0.3,
         },
+        "evaluation": {
+            "test_every": test_every,
+        },
         "selection": selection_cfg,
         "normalization": norm_cfg,
     })
@@ -110,75 +114,152 @@ def build_kn_config(
 def run_kn_sweep(
     k_list: list[int] | None = None,
     methods: list[str] | None = None,
+    seeds: list[int] | None = None,
     num_rounds: int = 100,
-    seed: int = 42,
+    test_every: int = 5,
     output_dir: str = "results/tables",
 ) -> list[dict[str, Any]]:
-    """Execute the participation crossover sweep."""
+    """Execute the multi-seed participation crossover sweep."""
     if k_list is None:
         k_list = [5, 10, 25, 50]
     if methods is None:
         methods = ["random", "fedqual_cpx"]
+    if seeds is None:
+        seeds = [42, 43, 44]
 
-    records = []
-    Path(output_dir).mkdir(parents=True, exist_ok=True)
+    output_path = Path(output_dir)
+    output_path.mkdir(parents=True, exist_ok=True)
 
     print("=" * 80)
-    print("FedQual-CPX Phase 15: Participation Crossover (K/N) Sweep")
-    print(f"K values: {k_list} | N: 100 | Rounds: {num_rounds} | Seed: {seed}")
+    print("FedQual-CPX Phase 15: Multi-Seed Participation Crossover (K/N) Sweep")
+    print(f"K values: {k_list} | N: 100 | Rounds: {num_rounds} | Seeds: {seeds}")
     print("=" * 80)
+
+    summary_rows = []
 
     for k_val in k_list:
         ratio = k_val / 100.0
         for method_key in methods:
-            print(f"\n---> Running K={k_val} (rho={ratio:.2f}), Method={method_key}")
-            cfg = build_kn_config(k_val, method_key, num_rounds=num_rounds, seed=seed)
+            print(f"\n============================================================")
+            print(f"Sweep Condition: K={k_val} (rho={ratio:.2f}), Method={method_key}")
+            print(f"============================================================")
 
-            exp_id = f"kn_k{k_val}_{method_key}_seed{seed}"
-            sim = FederatedSimulator(cfg, experiment_id=exp_id)
-            results = sim.run()
+            final_accs = []
+            rec_accs = []
+            ginis = []
+            coverages = []
+            for seed in seeds:
+                exp_id = f"kn_k{k_val}_{method_key}_seed{seed}"
+                sum_file = Path("results/raw") / exp_id / "summary.json"
+                exp_dir = Path("results/raw") / exp_id
 
-            best_acc = float(results.get("best_accuracy", 0.0))
-            final_acc = float(results.get("final_accuracy", 0.0))
-            part = results.get("participation", {})
-            gini = float(part.get("gini", 0.0))
-            coverage = float(part.get("coverage", 0.0))
+                if not sum_file.exists() and k_val == 10:
+                    alt_file = Path("results/raw") / f"main_class_swap_{method_key}_seed{seed}" / "summary.json"
+                    if alt_file.exists():
+                        sum_file = alt_file
+                        exp_dir = Path("results/raw") / f"main_class_swap_{method_key}_seed{seed}"
 
-            rec = {
+                # Check if already completed
+                if sum_file.exists():
+                    print(f"Found existing results for {sum_file}, loading cached summary.")
+                    with open(sum_file, "r", encoding="utf-8") as f:
+                        summary = json.load(f)
+                    final_acc = summary["final_accuracy"]
+                    best_acc = summary["best_accuracy"]
+                    fairness = summary["participation"]
+                    gini = fairness.get("gini", 0.0)
+                    cov = fairness.get("coverage", 0.0)
+
+                    # Try to extract recovery acc from global_metrics.csv
+                    gm_file = exp_dir / "global_metrics.csv"
+                    if gm_file.exists():
+                        with open(gm_file, "r", encoding="utf-8") as gf:
+                            rows = list(csv.DictReader(gf))
+                        drift_r = num_rounds // 2
+                        post = [float(r["test_accuracy"]) for r in rows if r.get("test_accuracy") != "" and int(r["round"]) >= drift_r]
+                        recovery_acc = float(np.mean(post)) if post else final_acc
+                    else:
+                        recovery_acc = final_acc
+                else:
+                    cfg = build_kn_config(k_val, method_key, num_rounds=num_rounds, seed=seed, test_every=test_every)
+                    sim = FederatedSimulator(cfg, experiment_id=exp_id)
+                    summary = sim.run()
+
+                    final_acc = float(summary.get("final_accuracy", 0.0))
+                    best_acc = float(summary.get("best_accuracy", 0.0))
+                    part = summary.get("participation", {})
+                    gini = float(part.get("gini", 0.0))
+                    cov = float(part.get("coverage", 0.0))
+
+                    gm_file = sim.output_dir / "global_metrics.csv"
+                    if gm_file.exists():
+                        with open(gm_file, "r", encoding="utf-8") as gf:
+                            rows = list(csv.DictReader(gf))
+                        drift_r = num_rounds // 2
+                        post = [float(r["test_accuracy"]) for r in rows if r.get("test_accuracy") != "" and int(r["round"]) >= drift_r]
+                        recovery_acc = float(np.mean(post)) if post else final_acc
+                    else:
+                        recovery_acc = final_acc
+
+                final_accs.append(final_acc * 100.0)
+                rec_accs.append(recovery_acc * 100.0)
+                ginis.append(gini)
+                coverages.append(cov * 100.0 if cov <= 1.0 else cov)
+
+                print(f"  Seed {seed}: Final Acc={final_acc:.2%}, Rec Acc={recovery_acc:.2%}, Gini={gini:.4f}, Cov={cov:.1%}")
+
+            # Compute bootstrap CIs
+            f_mean, f_ci_l, f_ci_h = compute_bootstrap_ci(final_accs)
+            r_mean, r_ci_l, r_ci_h = compute_bootstrap_ci(rec_accs)
+            g_mean = float(np.mean(ginis))
+            c_mean = float(np.mean(coverages))
+
+            summary_rows.append({
                 "k": k_val,
                 "ratio": ratio,
                 "method": method_key,
-                "best_accuracy": round(best_acc, 4),
-                "final_accuracy": round(final_acc, 4),
-                "gini": round(gini, 4),
-                "coverage": round(coverage, 4),
-            }
-            records.append(rec)
-            print(f"Recorded: Best Acc={best_acc:.2%}, Final Acc={final_acc:.2%}, Gini={gini:.4f}, Cov={coverage:.1%}")
+                "final_acc_mean": round(f_mean, 2),
+                "final_acc_ci_95": f"[{f_ci_l:.2f}, {f_ci_h:.2f}]",
+                "recovery_acc_mean": round(r_mean, 2),
+                "recovery_acc_ci_95": f"[{r_ci_l:.2f}, {r_ci_h:.2f}]",
+                "gini_mean": round(g_mean, 4),
+                "coverage_mean": round(c_mean, 1),
+                "num_seeds": len(seeds),
+            })
 
-    # Save summary tables
-    csv_path = Path(output_dir) / "kn_sweep_summary.csv"
-    json_path = Path(output_dir) / "kn_sweep_summary.json"
+            print(f"==> K={k_val}, Method={method_key}: Final Acc={f_mean:.2f}% [{f_ci_l:.2f}, {f_ci_h:.2f}], Recovery={r_mean:.2f}% [{r_ci_l:.2f}, {r_ci_h:.2f}], Gini={g_mean:.4f}, Cov={c_mean:.1f}%")
+
+    # Save to CSV and JSON
+    csv_path = output_path / "kn_sweep_summary.csv"
+    json_path = output_path / "kn_sweep_summary.json"
 
     with open(csv_path, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=["k", "ratio", "method", "best_accuracy", "final_accuracy", "gini", "coverage"])
+        fieldnames = [
+            "k", "ratio", "method", "final_acc_mean", "final_acc_ci_95",
+            "recovery_acc_mean", "recovery_acc_ci_95", "gini_mean", "coverage_mean", "num_seeds"
+        ]
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
-        writer.writerows(records)
+        writer.writerows(summary_rows)
 
     with open(json_path, "w", encoding="utf-8") as f:
-        json.dump(records, f, indent=2)
+        json.dump(summary_rows, f, indent=2)
 
-    print(f"\nSaved K/N sweep summary to {csv_path} and {json_path}")
-    return records
+    print(f"\nSuccessfully wrote K/N sweep summary to {csv_path} and {json_path}")
+    return summary_rows
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run participation crossover sweep.")
-    parser.add_argument("--quick", action="store_true", help="Quick mode (15 rounds, subset of K)")
-    parser.add_argument("--seed", type=int, default=42, help="Random seed")
+    parser.add_argument("--k-list", type=int, nargs="+", default=[5, 10, 25, 50], help="List of K values")
+    parser.add_argument("--seeds", type=int, nargs="+", default=[42, 43, 44], help="Random seeds")
+    parser.add_argument("--num-rounds", type=int, default=100, help="Number of FL communication rounds")
+    parser.add_argument("--test-every", type=int, default=5, help="Test evaluation frequency")
     args = parser.parse_args()
 
-    if args.quick:
-        run_kn_sweep(k_list=[10, 25], num_rounds=15, seed=args.seed)
-    else:
-        run_kn_sweep(k_list=[5, 10, 25, 50], num_rounds=100, seed=args.seed)
+    run_kn_sweep(
+        k_list=args.k_list,
+        seeds=args.seeds,
+        num_rounds=args.num_rounds,
+        test_every=args.test_every,
+    )

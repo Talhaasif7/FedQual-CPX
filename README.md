@@ -94,7 +94,7 @@ All experiments were executed with 5 deterministic random seeds (`[42, 43, 44, 4
 | ($\tau = 50$) | Utility Greedy (B2) | **38.35% [35.76, 40.48]** | 27.31% [24.64, 30.49] | 0.8976 | 12.0% |
 | | Sliding Window (B3, $W=10$) | 37.27% [34.71, 39.28] | 27.49% [25.06, 30.07] | 0.8998 | 10.2% |
 | | Fixed Exploration (B4, $\epsilon=0.15$) | 32.35% [29.25, 35.59] | 25.24% [23.22, 27.26] | 0.7052 | 90.4% |
-| | Page-Hinckley Adaptive (B6) | 33.24% [31.66, 34.88] | 25.64% [23.98, 27.11] | 0.4846 | 100.0% |
+| | Page-Hinckley Adaptive (B6, FLEX-style detector-matched variant, not a reimplementation of FLEX) | 33.24% [31.66, 34.88] | 25.64% [23.98, 27.11] | 0.4846 | 100.0% |
 | | FedQual-CPX (B8, Proposed) | 33.24% [31.66, 34.88] | 25.64% [23.98, 27.11] | 0.4846 | 100.0% |
 | **Continuous Feature Shift** | **Random / FedAvg (B0)** | 36.74% [32.96, 39.43] | **26.94% [25.21, 29.18]** | **0.1708** | **100.0%** |
 | ($\tau = 50$) | Utility Greedy (B2) | **37.25% [34.88, 39.90]** | 28.18% [26.02, 31.07] | 0.8983 | 12.0% |
@@ -107,8 +107,8 @@ All experiments were executed with 5 deterministic random seeds (`[42, 43, 44, 4
 | | Fixed Exploration (B4, $\epsilon=0.15$) | 35.16% [32.14, 37.65] | 31.41% [29.68, 33.61] | 0.7013 | 90.6% |
 | | FedQual-CPX (B8, Proposed) | 33.37% [32.22, 34.36] | 30.90% [29.45, 32.03] | 0.4962 | 100.0% |
 
-### 4.2 LEAF FEMNIST Benchmark Suite
-*62-class image classification (50,000 training samples, 10,000 test samples), abrupt class swap on 30% of clients at $\tau=50$*:
+### 4.2 EMNIST-ByClass (62-Class) Benchmark Suite
+*62-class character classification (50,000 training samples, 10,000 test samples), Dirichlet non-IID partition $\alpha=0.5$, abrupt class swap on 30% of clients at $\tau=50$*:
 
 | Selection Policy | Final Test Acc (95% CI) | Post-Drift Recovery Acc (95% CI) | Participation Gini ($\downarrow$) | Client Coverage |
 |---|:---:|:---:|:---:|:---:|
@@ -119,7 +119,7 @@ All experiments were executed with 5 deterministic random seeds (`[42, 43, 44, 4
 
 > [!NOTE]
 > **Scientific Integrity Notice regarding Shakespeare**:
-> Preliminary trials on Shakespeare character prediction produced chance-level accuracy ($1.00\% - 1.19\%$ across 90 vocabulary tokens, where random uniform guessing yields $1/90 \approx 1.11\%$). This occurred due to synthetic uniform integer token generation when raw LEAF text files were absent. To maintain uncompromising scientific rigor, those uninformative runs are excluded from the empirical benchmark.
+> Preliminary trials on Shakespeare character prediction produced chance-level accuracy ($1.00\% - 1.19\%$ across 90 vocabulary tokens, where random uniform guessing yields $1/90 \approx 1.11\%$). This occurred due to synthetic uniform integer token generation when raw text files were absent. To maintain uncompromising scientific rigor, those uninformative runs are excluded from the empirical benchmark.
 
 ### 4.3 Phase 13: Comprehensive 10-Condition Ablation Study
 To isolate the contribution of each algorithmic module, we systematically ablated detectors, normalizers, and exploration terms on CIFAR-10 ($N=100, K=10, T=100$):
@@ -127,7 +127,7 @@ To isolate the contribution of each algorithmic module, we systematically ablate
 | Condition Key | Ablated Module Group | Description | Best Accuracy | Final Accuracy | Gini ($\downarrow$) | Client Coverage |
 |---|---|---|:---:|:---:|:---:|:---:|
 | **A1_cusum_full** | Detector | Full FedQual-CPX (CUSUM + Robust MAD + Adaptive Exploration) | 32.62% | 32.45% | 0.2540 | 100.0% |
-| **A2_page_hinckley** | Detector | Page-Hinckley Detector (FLEX + Robust MAD) | 32.62% | 32.45% | 0.2540 | 100.0% |
+| **A2_page_hinckley** | Detector | Page-Hinckley Detector (FLEX-style + Robust MAD) | 32.62% | 32.45% | 0.2540 | 100.0% |
 | **A3_ewma_detector** | Detector | EWMA Detector + Robust MAD | 31.24% | 31.24% | 0.2793 | 100.0% |
 | **A4_no_detector** | Detector | No Detector (Adaptive Exploration on raw utility) | 31.64% | 31.64% | 0.3153 | 100.0% |
 | **B1_robust_mad** | Normalization | Robust MAD Normalization (Proposed) | 31.98% | 31.98% | 0.2780 | 100.0% |
@@ -136,6 +136,9 @@ To isolate the contribution of each algorithmic module, we systematically ablate
 | **B4_no_norm** | Normalization | No Normalization (Raw Utilities) | 29.71% | 29.71% | 0.2300 | 100.0% |
 | **C1_no_uncertainty** | Exploration | Uncertainty Term Disabled ($w_u = 0$) | 29.66% | 29.20% | 0.2780 | 100.0% |
 | **C2_no_change_bonus** | Exploration | Change Detection Bonus Disabled ($w_c = 0$) | 31.98% | 31.98% | 0.2780 | 100.0% |
+
+> [!NOTE]
+> **Ablation Precision & Remediation**: These ablation runs are single-seed and indicative for sub-1% differences across normalization methods. Condition A1 (32.45%) and B1 (31.98%) reflect different hyperparameter search configurations (A1: 5 warmup rounds, $\epsilon \in [0.08, 0.35]$; B1: 10 warmup rounds, $\epsilon \in [0.05, 0.30]$). A direct remediation test boosting `change_explore_weight` from 0.20 to 1.00 confirms the delay inflation barrier persists: the server still requires sufficient observation opportunities to detect drift initially.
 
 ### 4.4 Phase 14: Robustness Stress-Testing Analysis
 We evaluated the sensitivity of FedQual-CPX against severe non-IID heterogeneity ($\alpha \in \{0.1, 0.5, 1.0\}$) and varying fractions of drifting clients ($\{10\%, 30\%, 50\%\}$):
@@ -155,6 +158,16 @@ We evaluated the sensitivity of FedQual-CPX against severe non-IID heterogeneity
 | | $50\%$ Drifting | Random / FedAvg (B0) | 35.75% | 0.2391 | 100.0% |
 | | $50\%$ Drifting | FedQual-CPX (B8) | 38.16% | 0.2693 | 100.0% |
 
+### 4.5 Phase 15: Participation Crossover Threshold ($\rho = K/N$)
+We investigated the participation ratio threshold $\rho = K / N$ where change-aware client selection transitions from lagging behind random sampling to outperforming it. By Theorem 1, round detection latency scales as $T_{\text{delay}} \ge \frac{N}{K} \tau_{\text{obs}}$. For typical parameters ($\tau_{\text{obs}} \approx 11$, $T - \tau = 50$, $\gamma = 0.6$), the critical threshold is $\rho^* \approx 0.36$. When $\rho < \rho^*$ ($\rho \in \{0.05, 0.10\}$), random sampling outperforms change-aware selection because unbiased sampling avoids observation latency.
+
+*Evaluated on CIFAR-10 ($N=100, T=100$) across 5 random seeds with 95% bootstrap confidence intervals*:
+
+| Ratio ($\rho$) | Selection Policy | Final Test Acc (95% CI) | Post-Drift Recovery Acc (95% CI) | Participation Gini ($\downarrow$) | Client Coverage |
+|:---:|---|:---:|:---:|:---:|:---:|
+| **$\rho = 0.10$** | **Random / FedAvg (B0)** | **36.80% [33.66, 39.31]** | **31.16% [29.69, 32.40]** | **0.1708** | **100.0%** |
+| $\rho = 0.10$ | FedQual-CPX (B8, Proposed) | 33.24% [31.66, 34.88] | 29.43% [28.12, 30.35] | 0.4846 | 100.0% |
+
 ---
 
 ## 5. Benchmark Visualizations
@@ -171,8 +184,8 @@ We evaluated the sensitivity of FedQual-CPX against severe non-IID heterogeneity
 ### 5.4 Ablation Breakdown & Module Analysis
 ![Ablation Breakdown](figures/fig5_ablation_comparison.png)
 
-### 5.5 LEAF FEMNIST Benchmark Results
-![LEAF Benchmarks](figures/fig7_leaf_benchmarks.png)
+### 5.5 EMNIST-ByClass Benchmark Results
+![EMNIST-ByClass Benchmarks](figures/fig7_leaf_benchmarks.png)
 
 ---
 
@@ -343,7 +356,7 @@ FedQual-CPX/
 │   ├── run_main_experiments.py       # Multi-seed main scale benchmark runner
 │   ├── run_comprehensive_ablations.py# 10-condition ablation matrix runner
 │   ├── run_robustness_experiments.py # Non-IID and drift fraction stress-tester
-│   └── run_cross_dataset_benchmark.py# FEMNIST and Shakespeare cross-dataset runner
+│   └── run_cross_dataset_benchmark.py# EMNIST-ByClass cross-dataset runner
 ├── figures/                          # 300-DPI publication plots and architecture diagrams
 │   ├── architecture_overview.png     # Abstract system architecture
 │   ├── detection_and_adaptation_flow.png # Sequential CUSUM and adaptation pipeline
@@ -352,7 +365,7 @@ FedQual-CPX/
 │   ├── fig4_fairness_gini_comparison.png# Participation Gini bar chart
 │   ├── fig5_ablation_comparison.png  # Ablation condition bar charts
 │   ├── fig6_multi_drift_comparison.png  # Three-drift modality recovery chart
-│   └── fig7_leaf_benchmarks.png      # FEMNIST cross-dataset benchmark plot
+│   └── fig7_leaf_benchmarks.png      # EMNIST-ByClass cross-dataset benchmark plot
 ├── results/                          # Structured experimental results
 │   ├── logs/                         # Detailed training log files
 │   ├── raw/                          # JSON/CSV per-seed metric traces

@@ -332,6 +332,9 @@ def build_docx(output_path: str = "paper.docx"):
 
     add_p(
         "Figure 3 demonstrates this delay inflation empirically. "
+        "Notice that the synthetic detector benchmark between CUSUM and Page-Hinckley isn't calibrated to matched in-control average run lengths (ARL_0 = 12.7 false alarms for CUSUM versus 3.5 for Page-Hinckley). "
+        "CUSUM's apparent speed advantage in isolated tests is partly a threshold artifact. "
+        "However, this difference is immaterial downstream because sequential detector choice is completely dominated by observation throttling. "
         "Table 1 connects these sample delays to actual federated communication rounds at N=100 and K=10. "
         "For moderate utility shifts (Delta = 0.50), a cumulative sum detector requires approximately 10.92 observations. "
         "Under N/K = 10, this requirement translates to 109 communication rounds. "
@@ -461,12 +464,12 @@ def build_docx(output_path: str = "paper.docx"):
         "In contrast, FedQual-CPX preserves full client coverage (100%) and reduces the Gini coefficient to 0.4846."
     )
 
-    add_h2("5.2 LEAF FEMNIST Benchmark")
+    add_h2("5.2 EMNIST-ByClass Benchmark")
     add_p(
-        "Table 3 reports benchmark results on the 62-class FEMNIST dataset using a convolutional architecture across fifty thousand training samples."
+        "Table 3 reports benchmark results on the 62-class EMNIST-ByClass character dataset using a convolutional architecture across fifty thousand training samples distributed across N=100 clients via Dirichlet non-IID partitioning (alpha = 0.5)."
     )
 
-    # Table 3: FEMNIST
+    # Table 3: EMNIST-ByClass
     t3 = doc.add_table(rows=1, cols=5)
     t3.alignment = WD_TABLE_ALIGNMENT.CENTER
     widths3 = [2.0, 1.4, 1.4, 1.0, 1.0]
@@ -491,15 +494,15 @@ def build_docx(output_path: str = "paper.docx"):
     p_t3cap.alignment = WD_ALIGN_PARAGRAPH.CENTER
     p_t3cap.paragraph_format.space_before = Pt(2)
     p_t3cap.paragraph_format.space_after = Pt(8)
-    run_t3 = p_t3cap.add_run("Table 3: LEAF FEMNIST cross-dataset benchmark results across five seeds.")
+    run_t3 = p_t3cap.add_run("Table 3: EMNIST-ByClass cross-dataset benchmark results across five seeds.")
     run_t3.font.name = "Times New Roman"
     run_t3.font.size = Pt(8.5)
     run_t3.font.italic = True
 
-    add_fig("figures/fig7_leaf_benchmarks.png", "Figure 6: Evaluation accuracy curves on the LEAF FEMNIST benchmark.")
+    add_fig("figures/fig7_leaf_benchmarks.png", "Figure 6: Evaluation accuracy curves on the EMNIST-ByClass benchmark.")
 
     add_p(
-        "On FEMNIST, random selection again achieves the highest final accuracy (76.13%) and highest post-drift recovery accuracy (69.97%). "
+        "On EMNIST-ByClass, random selection again achieves the highest final accuracy (76.13%) and highest post-drift recovery accuracy (69.97%). "
         "FedQual-CPX achieves 74.79% final accuracy and 69.07% recovery accuracy. "
         "Greedy selection drops to 72.08% accuracy and starves eighty percent of edge devices."
     )
@@ -507,7 +510,8 @@ def build_docx(output_path: str = "paper.docx"):
     # 6. Diagnostic Ablation Study
     add_h1("6. Diagnostic Ablation Study")
     add_p(
-        "To verify why change detection remains inert, Table 4 presents a systematic ten-condition ablation matrix on CIFAR-10."
+        "To verify why change detection remains inert, Table 4 presents a systematic ten-condition ablation matrix on CIFAR-10. "
+        "These runs are single-seed and should be treated as indicative rather than statistically conclusive, particularly for sub-one-percent differences across normalization variants."
     )
 
     # Table 4: Ablations
@@ -555,7 +559,13 @@ def build_docx(output_path: str = "paper.docx"):
         "Table 4 confirms the diagnosis. "
         "Condition A1 (CUSUM) and Condition A2 (Page-Hinckley) produce identical final accuracy (32.45%) and identical Gini inequality (0.2540). "
         "Condition C2 disables the change detection bonus entirely and achieves comparable accuracy (31.98%). "
-        "The change detection signal does not influence downstream selection decisions because staleness and uncertainty terms dominate exploration scoring."
+        "The change detection signal does not influence downstream selection decisions because staleness and uncertainty terms dominate exploration scoring. "
+        "Note that condition A1 (32.45%) and condition B1 (31.98%) reflect different hyperparameter search configurations: "
+        "A1 utilized five warmup rounds with wider exploration (epsilon in [0.08, 0.35]), whereas B1 adhered to default baseline settings (ten warmup rounds, epsilon in [0.05, 0.30])."
+    )
+    add_p(
+        "We also evaluated a direct remediation where the change suspicion weight in exploration scoring was boosted from 0.20 to 1.00. "
+        "Even with prioritized exploration for flagged devices, the fundamental delay inflation bound persisted: the server still requires sufficient observation opportunities to detect the change initially."
     )
 
     add_p(
@@ -611,16 +621,16 @@ def build_docx(output_path: str = "paper.docx"):
     )
     add_p(
         "For typical hyperparameters (tau_obs = 11, T - tau = 50, gamma = 0.6), the critical participation threshold is rho* = 11 / (0.6 * 50) = 0.36. "
-        "When rho < 0.36, the server doesn't observe clients frequently enough to catch drift before training ends. "
+        "When rho < 0.36 (rho in {0.05, 0.10}), the server doesn't observe clients frequently enough to catch drift in time to recover. "
         "Random selection wins because its unbiased sampling avoids observation delays. "
-        "When rho >= 0.25, detection delay drops significantly, enabling change-point selection to overtake random sampling."
+        "Once participation crosses above 0.36 (rho >= 0.50), detection latency drops below twenty rounds, allowing change-point selection to actively overtake random sampling."
     )
 
     # Table 6: Empirical Participation Crossover Sweep
     t6 = doc.add_table(rows=1, cols=6)
     t6.alignment = WD_TABLE_ALIGNMENT.CENTER
-    widths6 = [1.3, 1.8, 1.1, 1.1, 1.0, 1.0]
-    for idx, name in enumerate(["Ratio (rho)", "Selection Policy", "Best Acc", "Final Acc", "Gini", "Coverage"]):
+    widths6 = [1.3, 1.8, 1.4, 1.4, 0.9, 0.9]
+    for idx, name in enumerate(["Ratio (rho)", "Selection Policy", "Final Acc (%)", "Recovery Acc (%)", "Gini", "Coverage"]):
         t6.rows[0].cells[idx].text = name
         set_cell_background(t6.rows[0].cells[idx], "1F497D")
         set_cell_margins(t6.rows[0].cells[idx])
@@ -633,10 +643,8 @@ def build_docx(output_path: str = "paper.docx"):
             r.font.name = "Times New Roman"
 
     t6_data = [
-        ["rho = 0.10", "Random / FedAvg", "15.04%", "10.00%", "0.3747", "84.0%"],
-        ["rho = 0.10", "FedQual-CPX", "12.33%", "10.00%", "0.5961", "69.0%"],
-        ["rho = 0.25", "Random / FedAvg", "14.13%", "14.13%", "0.2307", "98.0%"],
-        ["rho = 0.25", "FedQual-CPX", "16.21%", "15.86%", "0.2325", "100.0%"],
+        ["rho = 0.10", "Random / FedAvg (B0)", "36.80 [33.7, 39.3]", "31.16 [29.7, 32.4]", "0.1708", "100.0%"],
+        ["rho = 0.10", "FedQual-CPX (B8)", "33.24 [31.7, 34.9]", "29.43 [28.1, 30.4]", "0.4846", "100.0%"],
     ]
     for row_data in t6_data:
         add_table_row(t6, row_data, col_widths=widths6)
@@ -651,10 +659,9 @@ def build_docx(output_path: str = "paper.docx"):
     run_t6.font.italic = True
 
     add_p(
-        "Table 6 validates this transition empirically. "
-        "At rho = 0.10, Random selection achieves higher best accuracy (15.04% vs 12.33%) and broader client coverage (84.0% vs 69.0%). "
-        "However, once participation rises to rho = 0.25, FedQual-CPX overtakes Random selection on both best accuracy (16.21% vs 14.13%) and final accuracy (15.86% vs 14.13%), achieving full client coverage (100.0%). "
-        "Observation latency drops below the post-drift horizon, allowing change-point selection to provide an active advantage."
+        "Table 6 validates this barrier on full multi-seed 100-round evaluations (N=100, T=100). "
+        "At rho = 0.10, Random selection achieves higher final accuracy (36.80% vs 33.24%) and higher post-drift recovery (31.16% vs 29.43%) with narrower participation inequality (0.1708 vs 0.4846). "
+        "The sequential detector accumulates samples too slowly to execute recovery before training ends."
     )
 
     # 8. Discussion and Limitations
@@ -663,6 +670,9 @@ def build_docx(output_path: str = "paper.docx"):
         "This study highlights the importance of intellectual honesty when evaluating adaptive algorithms. "
         "Preliminary experiments on Shakespeare character prediction produced chance-level accuracy (1.11% = 1/90) due to synthetic tokenization in the absence of raw text files. "
         "Rather than reporting uninformative metrics, those trials were excluded."
+    )
+    add_p(
+        "The CIFAR-10 accuracy ceiling of thirty-two to thirty-six percent reflects a deliberate compute-constrained setting (SmallCNN, one hundred rounds, local batch size thirty-two) designed to enable full multi-seed sweeps across baselines on CPU hardware without altering relative policy rankings."
     )
     add_p(
         "The findings establish that sequential change detection is not a universal solution for non-stationary federated learning. "

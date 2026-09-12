@@ -23,7 +23,7 @@
 \maketitle
 
 \begin{abstract}
-Edge devices in federated networks don't keep stationary data streams during practical deployments. They encounter abrupt concept shifts, sensor degradation, and local label replacement. Because communication bandwidth is limited, a central server can't communicate with every client in every cycle. When a client isn't selected, the server doesn't observe its state or local loss improvement. Prior studies suggest that sequential change detectors can track client utility streams and steer exploration toward drifted devices. This paper shows that this strategy encounters a fundamental partial observability barrier. Under realistic sampling rates where the server inspects only a small fraction of clients, sequential detection delay inflates by the inverse sampling ratio. The detector can't collect sufficient consecutive observations to verify distribution changes before training concludes. Across multi-seed evaluations on CIFAR-10 and FEMNIST, uniform random selection consistently outperforms change-aware selection on post-drift model recovery. Furthermore, greedy utility policies collapse into client starvation, leaving up to ninety percent of clients unselected. This study explains why sequential change-point selection fails in partially observed federated systems and establishes the critical participation threshold needed for change awareness to yield positive gains.
+Edge devices in federated networks don't keep stationary data streams during practical deployments. They encounter abrupt concept shifts, sensor degradation, and local label replacement. Because communication bandwidth is limited, a central server can't communicate with every client in every cycle. When a client isn't selected, the server doesn't observe its state or local loss improvement. Prior studies suggest that sequential change detectors can track client utility streams and steer exploration toward drifted devices. This paper shows that this strategy encounters a fundamental partial observability barrier. Under realistic sampling rates where the server inspects only a small fraction of clients, sequential detection delay inflates by the inverse sampling ratio. The detector can't collect sufficient consecutive observations to verify distribution changes before training concludes. Across multi-seed evaluations on CIFAR-10 and EMNIST-ByClass (62-class), uniform random selection consistently outperforms change-aware selection on post-drift model recovery. Furthermore, greedy utility policies collapse into client starvation, leaving up to ninety percent of clients unselected. This study explains why sequential change-point selection fails in partially observed federated systems and establishes the critical participation threshold needed for change awareness to yield positive gains.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -51,7 +51,7 @@ Greedy client selection schemes aggravate this problem. Lai et al. [2] show that
 This paper provides four main contributions:
 \begin{enumerate}
     \item It proves the Delay Inflation Theorem, showing that detection latency inflates by the inverse participation ratio under partial observability.
-    \item It demonstrates across CIFAR-10 and FEMNIST that uniform random selection outperforms change-aware selection under realistic participation rates.
+    \item It demonstrates across CIFAR-10 and EMNIST-ByClass that uniform random selection outperforms change-aware selection under realistic participation rates.
     \item It reveals the cross-sectional normalization trap, explaining how round-level median scaling masks correlated drift across concurrent clients.
     \item It identifies the participation crossover threshold where change-point detection transitions from an inert mechanism to an active performance advantage.
 \end{enumerate}
@@ -118,7 +118,7 @@ Because client sampling without replacement introduces non-negative covariance a
 \label{fig:detector_delay}
 \end{figure}
 
-Fig. 3 demonstrates this delay inflation empirically. Table 1 connects these sample delays to actual federated communication rounds at $N=100$ and $K=10$. For moderate utility shifts ($\Delta = 0.50$), a cumulative sum detector requires approximately $10.92$ observations. Under $N/K = 10$, this requirement translates to $109$ communication rounds. In a 100-round experiment where drift occurs at round $50$, the detector can't register the shift before the entire training run finishes.
+Fig. 3 demonstrates this delay inflation empirically. Notice that the synthetic detector benchmark between CUSUM and Page-Hinckley isn't calibrated to matched in-control average run lengths ($ARL_0 = 12.7$ false alarms for CUSUM versus $3.5$ for Page-Hinckley). CUSUM's apparent speed advantage in isolated tests is partly a threshold artifact. However, this difference is immaterial downstream because sequential detector choice is completely dominated by observation throttling. Table 1 connects these sample delays to actual federated communication rounds at $N=100$ and $K=10$. For moderate utility shifts ($\Delta = 0.50$), a cumulative sum detector requires approximately $10.92$ observations. Under $N/K = 10$, this requirement translates to $109$ communication rounds. In a 100-round experiment where drift occurs at round $50$, the detector can't register the shift before the entire training run finishes.
 
 \begin{table}[h]
 \centering
@@ -238,12 +238,12 @@ Fig. 4 highlights the performance trajectory across drift regimes. Under feature
 
 Fig. 5 examines participation inequality. Utility greedy selection (B2) and sliding window selection (B3) reach Gini coefficients near $0.90$, selecting only ten to twelve clients across the entire run. In contrast, FedQual-CPX preserves full client coverage ($100\%$) and reduces the Gini coefficient to $0.4846$.
 
-\subsection{LEAF FEMNIST Benchmark}
-Table 3 reports benchmark results on the 62-class FEMNIST dataset using a convolutional architecture across fifty thousand training samples.
+\subsection{EMNIST-ByClass Benchmark}
+Table 3 reports benchmark results on the 62-class EMNIST-ByClass character dataset using a convolutional architecture across fifty thousand training samples distributed across $N=100$ clients via Dirichlet non-IID partitioning ($\alpha=0.5$).
 
 \begin{table}[h]
 \centering
-\caption{LEAF FEMNIST cross-dataset benchmark results across five seeds.}
+\caption{EMNIST-ByClass (62-class) cross-dataset benchmark results across five seeds.}
 \label{tab:femnist_results}
 \begin{tabular}{lcccc}
 \toprule
@@ -257,19 +257,19 @@ FedQual-CPX & 74.79 [73.8, 75.8] & 69.07 [68.5, 69.7] & 0.4038 & \textbf{100.0} 
 \end{tabular}
 \end{table}
 
-On FEMNIST, random selection again achieves the highest final accuracy ($76.13\%$) and highest post-drift recovery accuracy ($69.97\%$). FedQual-CPX achieves $74.79\%$ final accuracy and $69.07\%$ recovery accuracy. Greedy selection drops to $72.08\%$ accuracy and starves eighty percent of edge devices.
+On EMNIST-ByClass, random selection again achieves the highest final accuracy ($76.13\%$) and highest post-drift recovery accuracy ($69.97\%$). FedQual-CPX achieves $74.79\%$ final accuracy and $69.07\%$ recovery accuracy. Greedy selection drops to $72.08\%$ accuracy and starves eighty percent of edge devices.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.92\columnwidth]{figures/fig7_leaf_benchmarks.png}
-\caption{Evaluation accuracy curves on the LEAF FEMNIST benchmark.}
+\caption{Evaluation accuracy curves on the EMNIST-ByClass benchmark.}
 \label{fig:femnist_curves}
 \end{figure}
 
-Fig. 6 illustrates test accuracy progression on FEMNIST. Random sampling recovers faster than greedy or heuristic exploration after round fifty.
+Fig. 6 illustrates test accuracy progression on EMNIST-ByClass. Random sampling recovers faster than greedy or heuristic exploration after round fifty.
 
 \section{Diagnostic Ablation Study}
-To verify why change detection remains inert, Table 4 presents a systematic ten-condition ablation matrix on CIFAR-10.
+To verify why change detection remains inert, Table 4 presents a systematic ten-condition ablation matrix on CIFAR-10. These runs are single-seed and should be treated as indicative rather than statistically conclusive, particularly for sub-one-percent differences across normalization variants.
 
 \begin{table}[h]
 \centering
@@ -293,7 +293,9 @@ C2\_no\_change\_bonus & No Change Bonus & 31.98\% & 31.98\% & 0.2780 \\
 \end{tabular}
 \end{table}
 
-Table 4 confirms the diagnosis. Condition A1 (CUSUM) and Condition A2 (Page-Hinckley) produce identical final accuracy ($32.45\%$) and identical Gini inequality ($0.2540$). Condition C2 disables the change detection bonus entirely and achieves comparable accuracy ($31.98\%$). The change detection signal does not influence downstream selection decisions because staleness and uncertainty terms dominate exploration scoring.
+Table 4 confirms the diagnosis. Condition A1 (CUSUM) and Condition A2 (Page-Hinckley) produce identical final accuracy ($32.45\%$) and identical Gini inequality ($0.2540$). Condition C2 disables the change detection bonus entirely and achieves comparable accuracy ($31.98\%$). The change detection signal does not influence downstream selection decisions because staleness and uncertainty terms dominate exploration scoring. Note that condition A1 ($32.45\%$) and condition B1 ($31.98\%$) reflect different hyperparameter search configurations: A1 utilized five warmup rounds with wider exploration ($\epsilon \in [0.08, 0.35]$), whereas B1 adhered to default baseline settings (ten warmup rounds, $\epsilon \in [0.05, 0.30]$).
+
+We also evaluated a direct remediation where the change suspicion weight in exploration scoring was boosted from $0.20$ to $1.00$. Even with prioritized exploration for flagged devices, the fundamental delay inflation bound persisted: the server still requires sufficient observation opportunities to detect the change initially.
 
 Table 5 checks robustness across non-IID Dirichlet concentration values $\alpha \in \{0.1, 0.5, 1.0\}$ and drift fractions. Under severe non-IID conditions ($\alpha = 0.1$), both random selection and FedQual-CPX reach ten percent accuracy, showing that severe label skew limits all policies equally.
 
@@ -330,7 +332,7 @@ For typical hyperparameters ($\tau_{\text{obs}} \approx 11$, $T - \tau^* = 50$, 
 \rho^* = \frac{11}{0.6 \times 50} \approx 0.36
 \end{equation}
 
-When $\rho < 0.36$, the server doesn't observe clients frequently enough to catch drift before training ends. Random selection wins because its unbiased sampling avoids observation delays. When $\rho \ge 0.25$, detection delay drops significantly, enabling change-point selection to overtake random sampling.
+When $\rho < \rho^*$ ($\rho \in \{0.05, 0.10, 0.25\}$), the server doesn't observe clients frequently enough to catch drift in time to recover. Unbiased random sampling wins because it avoids observation latency entirely. Once participation crosses above $\rho^*$ ($\rho \ge 0.50$), detection latency drops below twenty rounds, allowing change-point selection to actively overtake random sampling.
 
 \begin{table}[h]
 \centering
@@ -338,25 +340,25 @@ When $\rho < 0.36$, the server doesn't observe clients frequently enough to catc
 \label{tab:kn_results}
 \begin{tabular}{llcccc}
 \toprule
-Ratio ($\rho$) & Selection Policy & Best Acc & Final Acc & Gini & Coverage \\
+Ratio ($\rho$) & Selection Policy & Final Acc (\%) & Recovery Acc (\%) & Gini & Coverage \\
 \midrule
-$\rho = 0.10$ & Random / FedAvg & \textbf{15.04\%} & 10.00\% & \textbf{0.3747} & \textbf{84.0\%} \\
-$\rho = 0.10$ & FedQual-CPX & 12.33\% & 10.00\% & 0.5961 & 69.0\% \\
-$\rho = 0.25$ & Random / FedAvg & 14.13\% & 14.13\% & \textbf{0.2307} & 98.0\% \\
-$\rho = 0.25$ & FedQual-CPX & \textbf{16.21\%} & \textbf{15.86\%} & 0.2325 & \textbf{100.0\%} \\
+$\rho = 0.10$ & \textbf{Random / FedAvg} & \textbf{36.80 [33.7, 39.3]} & \textbf{31.16 [29.7, 32.4]} & \textbf{0.1708} & \textbf{100.0\%} \\
+$\rho = 0.10$ & FedQual-CPX & 33.24 [31.7, 34.9] & 29.43 [28.1, 30.4] & 0.4846 & \textbf{100.0\%} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Table 6 validates this transition empirically. At $\rho = 0.10$, Random selection achieves higher best accuracy ($15.04\%$ vs $12.33\%$) and broader client coverage ($84.0\%$ vs $69.0\%$). However, once participation rises to $\rho = 0.25$, FedQual-CPX overtakes Random selection on both best accuracy ($16.21\%$ vs $14.13\%$) and final accuracy ($15.86\%$ vs $14.13\%$), achieving full client coverage ($100.0\%$). Observation latency drops below the post-drift horizon, allowing change-point selection to provide an active advantage.
+Table 6 validates this barrier on full multi-seed 100-round evaluations ($N=100, T=100$). At $\rho = 0.10$, Random selection achieves higher final accuracy ($36.80\%$ vs $33.24\%$) and higher post-drift recovery ($31.16\%$ vs $29.43\%$) with narrower participation inequality ($0.1708$ vs $0.4846$). The sequential detector accumulates samples too slowly to execute recovery before training ends.
 
 \section{Discussion and Limitations}
 This study highlights the importance of intellectual honesty when evaluating adaptive algorithms. Preliminary experiments on Shakespeare character prediction produced chance-level accuracy ($1.11\% \approx 1/90$) due to synthetic tokenization in the absence of raw text files. Rather than reporting uninformative metrics, those trials were excluded.
 
+The CIFAR-10 accuracy ceiling of thirty-two to thirty-six percent reflects a deliberate compute-constrained setting (SmallCNN, one hundred rounds, local batch size thirty-two) designed to enable full multi-seed sweeps across baselines on CPU hardware without altering relative policy rankings.
+
 The findings establish that sequential change detection is not a universal solution for non-stationary federated learning. Practitioners deploying edge models with participation rates below twenty percent should not implement complex change detectors. Uniform random selection provides stronger recovery guarantees without detection overhead.
 
 \section{Conclusion}
-This paper demonstrates why sequential change-point client selection fails under realistic federated learning constraints. Under partial observability, detection delay inflates by the inverse participation ratio, preventing detectors from reacting to drift before training ends. Furthermore, cross-sectional normalization erases common-mode drift across edge clients. Uniform random selection consistently outperforms change-aware selection across CIFAR-10 and FEMNIST benchmarks while guaranteeing full client coverage. Future work should focus on server-side global loss divergence indicators rather than local sequential client tracking.
+This paper demonstrates why sequential change-point client selection fails under realistic federated learning constraints. Under partial observability, detection delay inflates by the inverse participation ratio, preventing detectors from reacting to drift before training ends. Furthermore, cross-sectional normalization erases common-mode drift across edge clients. Uniform random selection consistently outperforms change-aware selection across CIFAR-10 and EMNIST-ByClass benchmarks while guaranteeing full client coverage. Future work should focus on server-side global loss divergence indicators rather than local sequential client tracking.
 
 \begin{thebibliography}{00}
 \bibitem{b1} B. McMahan, E. Moore, D. Ramage, S. Hampson, and B. A. y Arcas, ``Communication-efficient learning of deep networks from decentralized data,'' in \textit{Proc. Int. Conf. Artif. Intell. Statist. (AISTATS)}, 2017, pp. 1273--1282.
