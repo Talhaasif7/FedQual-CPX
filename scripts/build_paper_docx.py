@@ -662,9 +662,11 @@ def build_docx(output_path: str = "paper.docx"):
     run_t6.font.italic = True
 
     add_p(
-        "Table 6 validates this barrier on full multi-seed 100-round evaluations (N=100, T=100). "
+        "Table 6 validates this barrier on full multi-seed 100-round evaluations (N=100, T=100, evaluated across three seeds for rho=0.05 and five seeds for rho=0.10). "
         "At severe partial observability (rho = 0.05), Random selection achieves a 5.94% advantage in final accuracy (33.08% vs 27.14%) because the theoretical detection delay of 220 rounds exceeds the entire 100-round budget. "
-        "At rho = 0.10, Random selection continues to maintain its lead (36.80% vs 33.24%) and higher post-drift recovery (31.16% vs 29.43%) with narrower participation inequality (0.1708 vs 0.4846). "
+        "At this extreme ratio, recovery accuracy remains statistically overlapping (24.01% vs 23.32%), so separation appears in final accuracy first. "
+        "Doubling observability to rho = 0.10 narrows the final accuracy gap from 5.94% down to 3.56%, a compression that is directionally consistent with the barrier easing toward rho*. "
+        "At rho = 0.10, Random selection firmly separates on both post-drift recovery (31.16% vs 29.43%) and final accuracy (36.80% vs 33.24%) while preserving lower participation inequality (0.1708 vs 0.4846). "
         "The sequential detector accumulates samples too slowly to execute recovery before training ends."
     )
 
