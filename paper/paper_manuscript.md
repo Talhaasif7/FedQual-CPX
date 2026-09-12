@@ -92,6 +92,32 @@ where $\bar{D}_t$ is the moving average of drift detections, and $\bar{U}_t$ ref
 | | Fixed Exploration (B4) | 1.10 [0.82, 1.38] | **1.21 [1.06, 1.34]** | 0.7097 | 90.4% |
 | | **FedQual-CPX (B8)** | **1.19 [1.00, 1.45]** | 1.14 [1.08, 1.18] | **0.5401** | **100.0%** |
 
+### 3.3 Comprehensive 10-Condition Component Ablation Suite ($N=20, K=5, T=30, \tau=15$)
+
+| Key | Group | Description | Final Accuracy | Gini Index ($\downarrow$) | Client Coverage |
+|---|---|---|:---:|:---:|:---:|
+| **A1** | Detector | **Full FedQual-CPX (CUSUM + Robust MAD)** | **32.45%** | **0.2540** | **100.0%** |
+| **A2** | Detector | Page-Hinckley Detector (FLEX) | 32.45% | 0.2540 | 100.0% |
+| **A3** | Detector | EWMA Detector | 31.24% | 0.2793 | 100.0% |
+| **A4** | Detector | No Detector (Static Selection) | 31.64% | 0.3153 | 100.0% |
+| **B1** | Normalization | **Robust MAD Normalization (Proposed)** | **31.98%** | **0.2780** | **100.0%** |
+| **B2** | Normalization | Standard Z-Score Normalization | 32.05% | 0.2900 | 100.0% |
+| **B3** | Normalization | Min-Max Normalization | 29.04% | 0.2167 | 100.0% |
+| **B4** | Normalization | Raw Utility (No Normalization) | 29.71% | 0.2300 | 100.0% |
+| **C1** | Exploration | Uncertainty Bonus Disabled | 29.20% | 0.2780 | 100.0% |
+| **C2** | Exploration | Change Bonus Disabled | 31.98% | 0.2780 | 100.0% |
+
+### 3.4 Robustness & Sensitivity Suite (Heterogeneity & Drift Severity)
+
+| Dimension | Condition | Random / FedAvg (B0) | FedQual-CPX (B8) | Advantage ($\Delta$) | Coverage |
+|---|---|:---:|:---:|:---:|:---:|
+| **Non-IID Heterogeneity** | $\alpha = 0.1$ (Extreme Non-IID) | 10.00% | 10.00% | +0.00% | 100.0% |
+| | $\alpha = 0.5$ (Standard Non-IID) | 40.84% | **42.27%** | **+1.43%** | 100.0% |
+| | $\alpha = 1.0$ (Moderate Non-IID) | 40.55% | **44.13%** | **+3.58%** | 100.0% |
+| **Drift Severity** | $f_{\text{drift}} = 0.1$ (10% Drifting) | 41.25% | **43.14%** | **+1.89%** | 100.0% |
+| | $f_{\text{drift}} = 0.3$ (30% Drifting) | 40.84% | **42.27%** | **+1.43%** | 100.0% |
+| | $f_{\text{drift}} = 0.5$ (50% Drifting) | 35.75% | **38.16%** | **+2.41%** | 100.0% |
+
 ---
 
 ## 4. Key Takeaways & Research Insights

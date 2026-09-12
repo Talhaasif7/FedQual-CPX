@@ -192,12 +192,65 @@ Table~\ref{tab:leaf_benchmarks} summarizes performance across the LEAF vision (F
 \end{tabular}
 \end{table*}
 
+\subsection{Component-Wise Ablation Analysis}
+To isolate the contribution of each architectural element, Table~\ref{tab:ablation} presents a 10-condition ablation matrix evaluated across three analytical axes: detector mechanism, utility normalization strategy, and exploration incentive formulation.
+
+\begin{table}[h]
+\caption{Comprehensive 10-Condition Ablation Study ($N=20, K=5, T=30, \tau=15$)}
+\label{tab:ablation}
+\centering
+\begin{tabular}{llccc}
+\toprule
+\textbf{Key} & \textbf{Component Variant} & \textbf{Final Acc} & \textbf{Gini ($\downarrow$)} & \textbf{Coverage} \\
+\midrule
+\multicolumn{5}{l}{\textit{Axis 1: Detector Choice}} \\
+\textbf{A1} & \textbf{Full FedQual-CPX (CUSUM)} & \textbf{32.45\%} & \textbf{0.2540} & \textbf{100.0\%} \\
+A2 & Page-Hinckley (FLEX) & 32.45\% & 0.2540 & 100.0\% \\
+A3 & EWMA Detector & 31.24\% & 0.2793 & 100.0\% \\
+A4 & No Detector (Static) & 31.64\% & 0.3153 & 100.0\% \\
+\midrule
+\multicolumn{5}{l}{\textit{Axis 2: Normalization Policy}} \\
+\textbf{B1} & \textbf{Robust MAD Normalization} & \textbf{31.98\%} & \textbf{0.2780} & \textbf{100.0\%} \\
+B2 & Z-Score Normalization & 32.05\% & 0.2900 & 100.0\% \\
+B3 & Min-Max Normalization & 29.04\% & 0.2167 & 100.0\% \\
+B4 & Raw Utility (No Norm) & 29.71\% & 0.2300 & 100.0\% \\
+\midrule
+\multicolumn{5}{l}{\textit{Axis 3: Exploration Incentive}} \\
+\textbf{A1} & \textbf{Full Composite Incentive} & \textbf{32.45\%} & \textbf{0.2540} & \textbf{100.0\%} \\
+C1 & No Uncertainty Bonus & 29.20\% & 0.2780 & 100.0\% \\
+C2 & No Change Bonus & 31.98\% & 0.2780 & 100.0\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \begin{figure}[t]
 \centering
-\includegraphics[width=\columnwidth]{figures/fig7_leaf_benchmarks.png}
-\caption{Cross-dataset LEAF benchmark accuracy comparison on (a) FEMNIST 62-class CNN and (b) Shakespeare character recurrent LSTM.}
-\label{fig:leaf_benchmarks}
+\includegraphics[width=\columnwidth]{figures/fig5_ablation_breakdown.png}
+\caption{Component-wise ablation breakdown illustrating accuracy degradation when individual modules are removed.}
+\label{fig:ablation}
 \end{figure}
+
+\subsection{Robustness and Sensitivity Analysis}
+Table~\ref{tab:robustness} investigates the sensitivity of FedQual-CPX across data heterogeneity levels (Dirichlet parameter $\alpha \in \{0.1, 0.5, 1.0\}$) and concept drift severity ($f_{\text{drift}} \in \{0.1, 0.3, 0.5\}$).
+
+\begin{table}[h]
+\caption{Robustness & Sensitivity Analysis under Varied Non-IID Skew and Drift Severity}
+\label{tab:robustness}
+\centering
+\begin{tabular}{llccc}
+\toprule
+\textbf{Dimension} & \textbf{Condition} & \textbf{FedAvg (B0)} & \textbf{FedQual-CPX} & \textbf{Advantage ($\Delta$)} \\
+\midrule
+\textbf{Non-IID Heterogeneity} & $\alpha=0.1$ & 10.00\% & 10.00\% & +0.00\% \\
+& $\alpha=0.5$ & 40.84\% & \textbf{42.27\%} & \textbf{+1.43\%} \\
+& $\alpha=1.0$ & 40.55\% & \textbf{44.13\%} & \textbf{+3.58\%} \\
+\midrule
+\textbf{Drift Severity} & $f_{\text{drift}}=0.1$ & 41.25\% & \textbf{43.14\%} & \textbf{+1.89\%} \\
+& $f_{\text{drift}}=0.3$ & 40.84\% & \textbf{42.27\%} & \textbf{+1.43\%} \\
+& $f_{\text{drift}}=0.5$ & 35.75\% & \textbf{38.16\%} & \textbf{+2.41\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \section{Discussion of Key Findings}
 
