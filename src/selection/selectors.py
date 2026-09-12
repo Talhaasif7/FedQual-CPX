@@ -335,10 +335,13 @@ class FedQualCPXSelector(BaseSelector):
             exploit_scores[c] = e_score
 
             # Section 15: ExploreScore = a*staleness + b*uncertainty + c*change_suspect + d*fairness
+            # When change bonus is active, boost change_weight to ensure flagged clients
+            # actually receive exploration priority rather than being suppressed by unobserved clients.
+            change_weight = 1.00 if self.use_change_bonus else 0.20
             exp_score = (
                 0.35 * norm_staleness
                 + (0.35 * uncertainty if self.use_uncertainty else 0.0)
-                + 0.20 * change_suspect
+                + change_weight * change_suspect
                 + 0.10 * fairness_deficit
             )
             explore_scores[c] = exp_score

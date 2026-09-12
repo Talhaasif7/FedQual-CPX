@@ -1,0 +1,5 @@
+k,ratio,method,best_accuracy,final_accuracy,gini,coverage
+10,0.1,random,0.1504,0.1,0.3747,0.84
+10,0.1,fedqual_cpx,0.1233,0.1,0.5961,0.69
+25,0.25,random,0.1413,0.1413,0.2307,0.98
+25,0.25,fedqual_cpx,0.1621,0.1586,0.2325,1.0

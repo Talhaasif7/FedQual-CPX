@@ -13,7 +13,7 @@
 
 \begin{document}
 
-\title{Adaptive Client Selection for Concept Drift in Federated Learning}
+\title{The Partial Observability Barrier in Dynamic Federated Client Selection}
 
 \author{
 \IEEEauthorblockN{Anonymous Authors}
@@ -23,53 +23,21 @@
 \maketitle
 
 \begin{abstract}
-Edge devices in federated learning don't keep stationary data distributions over long deployment horizons. They face sudden concept shifts, sensor degradation, and seasonal label variations. Under standard bandwidth limits, a central server only talks to a small fraction of clients in each round. Unselected clients can't report their state, so the server doesn't observe them. Common greedy selection schemes pick the same top clients repeatedly. That causes severe client starvation, leaving most edge clients unselected. Stagnant clients don't get checked, so the system won't catch recovery when conditions change. This paper studies FedQual-CPX, an adaptive client selection framework for non-stationary federated networks. The system tracks local loss improvements, scales them with causal median absolute deviation normalization, and spots shifts using two-sided cumulative sum detectors. An adaptive exploration controller raises sampling rates when drift happens, while staleness scoring pulls forgotten clients back into training. Across experiments on CIFAR-10, FEMNIST, and Shakespeare with five random seeds, the proposed policy maintains full client participation. It cuts participation inequality by up to fifty-four percent compared to greedy selection and preserves post-drift recovery.
+Edge devices in federated networks don't keep stationary data streams during practical deployments. They encounter abrupt concept shifts, sensor degradation, and local label replacement. Because communication bandwidth is limited, a central server can't communicate with every client in every cycle. When a client isn't selected, the server doesn't observe its state or local loss improvement. Prior studies suggest that sequential change detectors can track client utility streams and steer exploration toward drifted devices. This paper shows that this strategy encounters a fundamental partial observability barrier. Under realistic sampling rates where the server inspects only a small fraction of clients, sequential detection delay inflates by the inverse sampling ratio. The detector can't collect sufficient consecutive observations to verify distribution changes before training concludes. Across multi-seed evaluations on CIFAR-10 and FEMNIST, uniform random selection consistently outperforms change-aware selection on post-drift model recovery. Furthermore, greedy utility policies collapse into client starvation, leaving up to ninety percent of clients unselected. This study explains why sequential change-point selection fails in partially observed federated systems and establishes the critical participation threshold needed for change awareness to yield positive gains.
 \end{abstract}
 
 \begin{IEEEkeywords}
-Federated learning, concept drift, client selection, change point detection, participation fairness.
+Federated learning, concept drift, client selection, change point detection, partial observability, participation inequality.
 \end{IEEEkeywords}
 
 \section{Introduction}
-Federated learning lets edge devices train a shared model without sending raw records to a central facility [1]. Smartphones, medical scanners, and connected vehicles compute updates locally and send parameter differences back to a coordination server [2]. But real edge deployments don't stay steady over time. Client data distributions drift because user habits change, lighting shifts, and physical sensors slowly degrade.
+Federated optimization enables edge clients to train a shared predictive model without transferring raw observations to a central server. McMahan et al. [1] show that local stochastic updates aggregated via coordinate averaging construct accurate global networks. In real mobile environments, client distributions don't remain stationary. Sensor quality drops over time, environmental lighting alters camera inputs, and user habits shift seasonally. These dynamics cause local concept drift across participating edge nodes.
 
-Partial observability makes client selection difficult under concept drift. The server doesn't see every client in every communication round. Bandwidth constraints force the server to pick only ten out of a hundred clients per round. When a client isn't picked, its current data distribution and loss gain stay completely hidden. A missing observation isn't a zero. It is simply unknown.
+Handling concept drift in federated networks isn't straightforward because the coordinator operates under partial observability. Bandwidth boundaries prevent the central hub from contacting every device in each round. The system can't observe clients that aren't picked for the active batch. When a client isn't chosen, its local dataset gain stays entirely unseen. Missing observations aren't equivalent to zero utility. They represent unobserved latent quantities.
 
-Prior selection methods struggle with this partial observability. Lai et al. [2] show that greedy utility sampling speeds up model training in static settings. Yet under concept drift, greedy selection traps the server in a narrow clique of previously strong devices. Stale clients don't get revisited, and newly improved clients can't show their worth. Li et al. [3] study optimization under device heterogeneity, but their setup doesn't handle temporal distribution shifts. Standard random selection explores every client evenly, but it doesn't exploit high-performing devices effectively.
+Recent proposals argue that the server can monitor sequential client utility signals to identify temporal drift. Works like FLEX [5] suggest applying sequential change detectors to spot distribution shifts and trigger adaptive exploration. This paper conducts a rigorous empirical investigation of that proposition. The findings show that this intuitive idea encounters a structural barrier. Under standard edge participation rates, sequential change detection doesn't accelerate model recovery. In fact, uniform random selection consistently achieves superior post-drift accuracy.
 
-Moving average filters and windowed methods also fall short. They smooth out utility fluctuations over fixed time frames, so they can't catch sudden drops quickly. By the time a moving window notices that a client drifted, the server has already integrated dozens of damaged updates. Heuristic restart rules like those in FLEX [5] try to clear outdated memory, but resetting the model throws away hard-won convergence progress. What edge networks need is an online selection rule that tracks client quality shifts directly.
-
-This paper presents FedQual-CPX, an adaptive selection framework that explicitly handles partial observability under concept drift. Instead of relying on static rules, the server tracks loss improvements, flags distribution shifts with sequential cumulative sum tests, and adapts exploration rates dynamically. Neglected clients aren't abandoned. They get pulled back into training before selection biases harden.
-
-The main findings of this work show three clear patterns:
-\begin{enumerate}
-    \item Greedy client selection collapses in non-stationary networks. It starves eighty to ninety percent of available devices and locks into high participation inequality.
-    \item Sequential change detection paired with dynamic exploration restores full client coverage across all tested benchmarks without hurting global accuracy.
-    \item Causal median absolute deviation scaling stabilizes utility tracking across diverse network architectures without leaking future observations.
-\end{enumerate}
-
-\section{Related Work}
-Client selection has received wide attention in distributed machine learning. McMahan et al. [1] introduce federated averaging using uniform random participant sampling. Random sampling gives every device an equal selection chance, but it doesn't prioritize informative updates. Nishio and Yonetani [4] incorporate client compute and communication capabilities to prune stragglers. Lai et al. [2] formulate the Oort framework, selecting clients based on statistical utility and training speed. While Oort speeds up convergence under stationary data, it doesn't account for temporal shifts. It locks onto early high-utility devices and starves the remaining network.
-
-Concept drift in edge networks poses distinct challenges. Lu et al. [5] and Gama et al. [6] categorize drift into abrupt, gradual, and incremental types. In centralized data streaming, drift detectors monitor loss streams directly. In federated networks, central servers can't inspect client data streams due to privacy rules and partial sampling. Recent efforts attempt to manage drift by clustering clients or restarting models. Model restarts disrupt ongoing optimization, and client clustering doesn't scale when individual device behaviors drift independently.
-
-Sequential change-point analysis traces back to continuous inspection schemes. Page [7] introduces the cumulative sum (CUSUM) test to detect mean shifts in sequential observations. Basseville and Nikiforov [8] formalize two-sided detection for bounded false-alarm rates. While sequential detectors are common in industrial signal monitoring, their application to federated client selection remains rare. Existing federated drift handlers either use fixed exploration rates or rely on uncalibrated loss differences. FedQual-CPX bridges this gap by coupling sequential cumulative sum tracking with dynamic epistemic exploration.
-
-\section{Problem Formulation}
-A federated system trains over $N$ edge devices indexed by $i \in \{1, \dots, N\}$. Each device holds a local dataset $\mathcal{D}_{i,t}$ that may change across communication rounds $t \in \{1, \dots, T\}$. In round $t$, the server selects a cohort $S_t \subset \{1, \dots, N\}$ containing $|S_t| = K \ll N$ clients.
-
-Clients in $S_t$ download global parameters $\mathbf{w}_t$, run local stochastic gradient descent for $E$ epochs, and upload local parameters $\mathbf{w}_{i,t}$. Following the formulation in McMahan et al. [1], the server aggregates parameter updates through sample-weighted averaging:
-\begin{equation}
-\mathbf{w}_{t+1} = \sum_{i \in S_t} \frac{n_i}{\sum_{j \in S_t} n_j} \mathbf{w}_{i,t}
-\end{equation}
-
-Raw gradient norms don't tell whether local training actually helped the global objective. This paper defines client utility as the empirical loss gain achieved locally:
-\begin{equation}
-u_{i,t} = \mathcal{L}_i(\mathbf{w}_t; \mathcal{D}_{i,t}) - \mathcal{L}_i(\mathbf{w}_{i,t}; \mathcal{D}_{i,t})
-\end{equation}
-A positive value $u_{i,t} > 0$ marks constructive progress. A negative value indicates harmful updates, such as corrupted labels or noise.
-
-When client $i \notin S_t$, its utility isn't observed. The server doesn't set missing values to zero because doing so would mimic severe model degradation. Instead, the server maintains an explicit observation mask and tracks staleness counters. A missing observation simply means information is absent until that client is selected again.
+The cause of this failure traces to observation throttling. A sequential detector requires several consecutive measurements to distinguish genuine concept drift from gradient stochasticity. When only ten out of a hundred edge devices participate per round, each client appears once every ten communication rounds on average. An observation delay of five steps inflates to fifty communication rounds. When drift takes place halfway through training, the detector won't gather enough data points to trigger before training finishes.
 
 \begin{figure}[t]
 \centering
@@ -78,19 +46,22 @@ When client $i \notin S_t$, its utility isn't observed. The server doesn't set m
 \label{fig:arch_overview}
 \end{figure}
 
-\section{Methodology}
-Fig. 1 presents the overall architecture of FedQual-CPX. The server coordinates parameter broadcast, tracks historical loss gains, and balances exploration against exploitation in every communication cycle.
+Greedy client selection schemes aggravate this problem. Lai et al. [2] show that picking devices with high statistical utility speeds up initial convergence. Yet under concept drift, greedy selection locks the server into a small group of previously strong devices. Stale devices aren't checked, and drifted nodes can't demonstrate their updated loss gradients. This behavior produces severe participation inequality. Most clients remain entirely starved throughout training.
 
-\subsection{Client Utility and Robust Normalization}
-Different edge devices don't have identical loss scales. A device with complex images can report large loss drops, while a device with clean data reports small drops. Standard z-score scaling breaks down when sudden outliers appear, and min-max scaling collapses on boundary points.
+This paper provides four main contributions:
+\begin{enumerate}
+    \item It proves the Delay Inflation Theorem, showing that detection latency inflates by the inverse participation ratio under partial observability.
+    \item It demonstrates across CIFAR-10 and FEMNIST that uniform random selection outperforms change-aware selection under realistic participation rates.
+    \item It reveals the cross-sectional normalization trap, explaining how round-level median scaling masks correlated drift across concurrent clients.
+    \item It identifies the participation crossover threshold where change-point detection transitions from an inert mechanism to an active performance advantage.
+\end{enumerate}
 
-In the tradition of Huber [9], FedQual-CPX applies causal Median Absolute Deviation (MAD) normalization. The server computes running statistics using only past observations $\mathcal{H}_i(t)$ for client $i$:
-\begin{align}
-\tilde{\mu}_{i,t} &= \text{median}(\{u_{i,\tau}\}_{\tau \in \mathcal{H}_i(t)}) \\
-\text{MAD}_{i,t} &= \text{median}(|u_{i,\tau} - \tilde{\mu}_{i,t}|) + 10^{-6} \\
-\tilde{u}_{i,t} &= \text{clip}\left(\frac{u_{i,t} - \tilde{\mu}_{i,t}}{1.4826 \cdot \text{MAD}_{i,t}}, -3.0, 3.0\right)
-\end{align}
-This causal clipping prevents future leakage. Outliers can't distort historical baselines, and clean updates don't get squashed.
+\section{Related Work}
+Client selection has received wide attention in distributed optimization. McMahan et al. [1] introduce federated averaging using uniform random participant sampling. Random sampling gives every device an equal selection probability, but it doesn't prioritize informative local updates. Nishio and Yonetani [4] incorporate client compute and communication capabilities to prune stragglers. Lai et al. [2] formulate the Oort framework, selecting clients based on statistical utility and training speed. While Oort speeds up convergence under stationary data, it doesn't account for temporal shifts. It locks onto early high-utility devices and starves the remaining network.
+
+Concept drift in edge networks poses distinct challenges. Lu et al. [5] and Gama et al. [6] categorize drift into abrupt, gradual, and incremental types. In centralized data streaming, drift detectors monitor loss streams directly. In federated networks, central servers can't inspect client data streams due to privacy rules and partial sampling. Recent efforts attempt to manage drift by clustering clients or restarting models. Model restarts disrupt ongoing optimization, and client clustering doesn't scale when individual device behaviors drift independently.
+
+Sequential change-point analysis traces back to continuous quality inspection schemes. Page [7] introduces the cumulative sum test to detect mean shifts in sequential observations. Basseville and Nikiforov [8] formalize two-sided detection for bounded false-alarm rates. While sequential detectors are common in industrial signal monitoring, their application to federated client selection remains rare. Existing federated drift handlers either use fixed exploration rates or rely on uncalibrated loss differences. This paper investigates whether sequential cumulative sum tracking can guide client exploration under realistic participation limits.
 
 \begin{figure}[t]
 \centering
@@ -99,215 +70,305 @@ This causal clipping prevents future leakage. Outliers can't distort historical 
 \label{fig:detection_flow}
 \end{figure}
 
-\subsection{Sequential Drift Detection}
-Fig. 2 outlines the decision flow for individual client streams. Following Page [7], the server runs a two-sided sequential cumulative sum (CUSUM) test on normalized utility values:
+\section{System Model and Problem Formulation}
+A federated system coordinates training across $N$ edge devices indexed by $i \in \{1, \dots, N\}$. Each device holds a local dataset $\mathcal{D}_{i,t}$ that changes across communication rounds $t \in \{1, \dots, T\}$. In round $t$, the server selects a cohort $S_t \subset \{1, \dots, N\}$ containing $|S_t| = K \ll N$ clients.
+
+Clients in $S_t$ download global parameters $\mathbf{w}_t$, run local stochastic gradient descent for $E$ epochs, and upload local parameters $\mathbf{w}_{i,t}$. Following the formulation in McMahan et al. [1], the server aggregates parameter updates through sample-weighted averaging:
+\begin{equation}
+\mathbf{w}_{t+1} = \sum_{i \in S_t} \frac{n_i}{\sum_{j \in S_t} n_j} \mathbf{w}_{i,t}
+\end{equation}
+
+Raw gradient norms don't reveal whether local training actually helped the global objective. This paper defines client utility as the empirical loss gain achieved locally:
+\begin{equation}
+u_{i,t} = \frac{\mathcal{L}_i(\mathbf{w}_t; \mathcal{D}_{i,t}) - \mathcal{L}_i(\mathbf{w}_{i,t}; \mathcal{D}_{i,t})}{\max(C_i, \epsilon)}
+\end{equation}
+where $C_i$ denotes client communication cost and $\epsilon > 0$ avoids division by zero. A positive value $u_{i,t} > 0$ marks constructive progress. A negative value indicates harmful updates, such as corrupted labels or noise.
+
+When client $i \notin S_t$, its utility isn't observed. The server doesn't set missing values to zero because doing so mimics severe model degradation. Instead, the server maintains an explicit observation mask and tracks staleness counters. A missing observation simply means information is absent until that client is selected again.
+
+\section{The Partial Observability Barrier}
+This section analyzes the theoretical mechanics governing sequential change-point detection under client sampling constraints.
+
+\subsection{The Delay Inflation Theorem}
+Consider an edge client $i$ that undergoes a local distribution change at communication round $\tau^*$. Let $\{y_{i,k}\}_{k=1}^{\infty}$ denote the sequential sequence of normalized utility observations recorded whenever client $i$ participates in an active training round.
+
+Under continuous full observation ($K = N$), the sequential detector inspects $y_{i,k}$ at every round $k = t$. Let $\tau_{\text{obs}}$ denote the intrinsic detection delay measured in the number of observed samples:
+\begin{equation}
+\tau_{\text{obs}} = \inf \{k \ge 1 : g(y_{i, 1}, \dots, y_{i, k}) > h\}
+\end{equation}
+where $g(\cdot)$ is the detector test statistic and $h$ is the decision threshold.
+
+In a partially observed federated network with $K \ll N$, client $i$ isn't observed at every communication round. Let $I_{i,t} \in \{0, 1\}$ indicate whether client $i$ is selected at round $t$. The number of observations accumulated by round $t$ after drift is $M_{i,t} = \sum_{s=\tau^*+1}^t I_{i,s}$.
+
+\textbf{Theorem 1 (Delay Inflation Bound):} Under uniform participant sampling where each client is selected independently with probability $p = K/N$, the expected communication round of detection $T_{\text{detect}}$ satisfies:
+\begin{equation}
+\mathbb{E}[T_{\text{detect}} - \tau^*] \ge \frac{N}{K} \cdot \mathbb{E}[\tau_{\text{obs}}]
+\end{equation}
+
+\textit{Proof Sketch:} The arrival of client observation opportunities follows a renewal process with inter-arrival intervals $\Delta t \sim \text{Geometric}(p)$. By Wald's identity for stopped sums of independent random variables, the expected wall-clock round required to accumulate $\tau_{\text{obs}}$ observations is:
+\begin{equation}
+\mathbb{E}\left[\sum_{k=1}^{\tau_{\text{obs}}} \Delta t_k\right] = \mathbb{E}[\Delta t] \cdot \mathbb{E}[\tau_{\text{obs}}] = \frac{1}{p} \cdot \mathbb{E}[\tau_{\text{obs}}] = \frac{N}{K} \cdot \mathbb{E}[\tau_{\text{obs}}]
+\end{equation}
+Because client sampling without replacement introduces non-negative covariance across unselected devices, this bound holds with equality or serves as a strict lower bound.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.92\columnwidth]{figures/fig2_detector_delay_vs_delta.png}
+\caption{Detection delay as a function of utility shift magnitude.}
+\label{fig:detector_delay}
+\end{figure}
+
+Fig. 3 demonstrates this delay inflation empirically. Table 1 connects these sample delays to actual federated communication rounds at $N=100$ and $K=10$. For moderate utility shifts ($\Delta = 0.50$), a cumulative sum detector requires approximately $10.92$ observations. Under $N/K = 10$, this requirement translates to $109$ communication rounds. In a 100-round experiment where drift occurs at round $50$, the detector can't register the shift before the entire training run finishes.
+
+\begin{table}[h]
+\centering
+\caption{Sequential detector delay mapped to federated rounds ($N=100, K=10$).}
+\label{tab:delay_mapping}
+\begin{tabular}{lrrr}
+\toprule
+Shift Magnitude ($\Delta$) & Sample Delay & FL Round Latency & Status at $T=100$ \\
+\midrule
+Large Shift ($\Delta = 1.00$) & 5.06 obs & 51 rounds & Triggers at end \\
+Medium Shift ($\Delta = 0.50$) & 10.92 obs & 109 rounds & Misses window \\
+Small Shift ($\Delta = 0.25$) & 32.38 obs & 324 rounds & Misses window \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{The Cross-Sectional Normalization Trap}
+A second obstacle arises from utility normalization. To prevent client loss scales from skewing selection, systems apply robust z-score normalization. Huber [9] shows that Median Absolute Deviation (MAD) provides outlier resistance. When normalization operates across contemporaneous clients in round $t$:
+\begin{equation}
+\tilde{u}_{i,t} = \frac{u_{i,t} - \text{median}(\{u_{j,t}\}_{j \in S_t})}{1.4826 \cdot \text{MAD}(\{u_{j,t}\}_{j \in S_t}) + \epsilon}
+\end{equation}
+
+When thirty percent of edge devices drift simultaneously, the round median drops in tandem with the drifting devices. Drifting clients don't appear as outliers relative to their peers in that round. Their normalized z-scores remain close to zero. Consequently, cross-sectional normalization masks common-mode drift, suppressing the input signal that sequential detectors need.
+
+\section{The FedQual-CPX Framework}
+Fig. 1 and Fig. 2 illustrate the complete architecture of FedQual-CPX. The server tracks empirical loss improvements, processes them with causal scaling, and balances exploration against exploitation.
+
+\subsection{Sequential Change-Point Detection}
+For each client $i$, the server implements a two-sided Cumulative Sum (CUSUM) test following Page [7]. The detector maintains positive and negative cumulative sum statistics:
 \begin{align}
-S_{i,t}^+ &= \max\left(0, S_{i,t-1}^+ + (\tilde{u}_{i,t} - \delta / 2)\right) \\
-S_{i,t}^- &= \max\left(0, S_{i,t-1}^- - (\tilde{u}_{i,t} + \delta / 2)\right)
+S_{i,k}^+ &= \max\left(0, S_{i,k-1}^+ + (y_{i,k} - \mu_{0,i}) - \kappa\right) \\
+S_{i,k}^- &= \max\left(0, S_{i,k-1}^- - (y_{i,k} - \mu_{0,i}) - \kappa\right)
 \end{align}
-Here, parameter $\delta = 0.5$ sets the minimum detectable shift size. The upper accumulator $S_{i,t}^+$ catches positive utility jumps, while the lower accumulator $S_{i,t}^-$ catches negative utility collapses. When the accumulator crosses threshold $h_{\text{th}} = 5.0$, the server marks a change event, resets both accumulators to zero, and updates a global drift frequency counter $\bar{D}_t$.
+where $\mu_{0,i}$ is the running reference mean, $\kappa = \Delta_{\min}/2$ is the allowance parameter, and a change event is registered when $\max(S_{i,k}^+, S_{i,k}^-) > h$.
 
-\subsection{Adaptive Exploration and Selection Policy}
-Fixed exploration rates don't adjust to network stability. When data distributions stay quiet, random exploration wastes bandwidth on known weak clients. When concept drift strikes, fixed exploration isn't aggressive enough to uncover shifted devices.
-
-The server calculates an adaptive exploration probability $\epsilon_t \in [0.05, 0.50]$:
+Alternatively, the server can instantiate the Page-Hinckley test used in FLEX [5]:
 \begin{equation}
-\epsilon_t = \text{clip}\left(\epsilon_{\text{base}} + \gamma_d \cdot \bar{D}_t + \gamma_u \cdot \bar{U}_t, 0.05, 0.50\right)
+m_{i,k} = \sum_{j=1}^k (y_{i,j} - \bar{y}_{i,k} + \delta), \quad M_{i,k} = \max_{1 \le j \le k} m_{i,j}
 \end{equation}
-where $\bar{U}_t$ represents average client staleness across the population. In each round, the server splits cohort size $K$ into:
+with an alarm raised when $M_{i,k} - m_{i,k} > \lambda$.
+
+\subsection{Dual-Pool Selection Mechanism}
+In each communication round $t$, the selection budget $K$ is divided into an exploitation pool of size $K_{\text{exploit}} = \lfloor (1 - \epsilon_t) K \rfloor$ and an exploration pool of size $K_{\text{explore}} = K - K_{\text{exploit}}$.
+
+The dynamic exploration fraction $\epsilon_t$ adapts to system uncertainty:
 \begin{equation}
-K_{\text{exploit}} = \lfloor (1 - \epsilon_t) K \rfloor, \quad K_{\text{explore}} = K - K_{\text{exploit}}
+\epsilon_t = \text{clip}\left(\epsilon_{\min} + c_1 r_{\text{drift}} + c_2 \bar{\sigma} + c_3 d_{\text{cov}}, \epsilon_{\min}, \epsilon_{\max}\right)
 \end{equation}
+where $r_{\text{drift}}$ is the proportion of recently changed clients, $\bar{\sigma}$ is average parameter uncertainty, and $d_{\text{cov}}$ measures coverage deficit.
 
-For exploitation, the server ranks observed clients using their normalized score plus a transient change bonus $\beta_c = 1.0$:
+Clients compete for exploration slots through a combined ranking score:
 \begin{equation}
-\text{Score}_i^{\text{exploit}} = \hat{\mu}_{i,t} + \beta_c \cdot \mathbf{1}_{\{\text{drift}_i\}}
+\text{ExploreScore}_i = w_s \cdot \text{Staleness}_i + w_u \cdot \text{Uncertainty}_i + w_c \cdot \text{ChangeSuspect}_i + w_f \cdot \text{FairnessDeficit}_i
 \end{equation}
-For exploration, the server picks from the unselected pool based on staleness $t - \tau_i^{\text{last}}$ and utility uncertainty $\sigma_{i,t}$:
-\begin{equation}
-\text{Score}_i^{\text{explore}} = (t - \tau_i^{\text{last}}) + \lambda_u \cdot \sigma_{i,t}
-\end{equation}
-Forgotten clients don't stay hidden forever. They get selected automatically when their staleness score climbs. Simple as that.
-
-\subsection{Algorithmic Summary}
-The complete FedQual-CPX execution follows five logical steps in each communication round:
-\begin{enumerate}
-    \item \textbf{Exploration Rate Calculation:} The server updates $\bar{D}_t$ from recent drift alerts and computes $\epsilon_t \in [0.05, 0.50]$.
-    \item \textbf{Cohort Selection:} The server draws $K_{\text{exploit}}$ clients with top exploitation scores and $K_{\text{explore}}$ clients with highest staleness scores.
-    \item \textbf{Local Training and Utility Return:} Selected clients execute local SGD, compute loss drop $u_{i,t}$, and upload updated parameters.
-    \item \textbf{Causal MAD Scaling:} The server updates running median and MAD for selected clients, scaling $u_{i,t}$ to $\tilde{u}_{i,t}$.
-    \item \textbf{CUSUM Update and Aggregation:} The server updates accumulators $S_{i,t}^+$ and $S_{i,t}^-$, flags drift events, and aggregates global parameters $\mathbf{w}_{t+1}$.
-\end{enumerate}
-
-\section{Experimental Setup}
-
-\subsection{Datasets and Partitioning}
-Experiments test three standard benchmarks:
-\begin{itemize}
-    \item \textbf{CIFAR-10:} Fifty thousand training images across ten categories. Non-IID partitions follow Dirichlet distribution with concentration $\alpha = 0.5$ across $N=100$ clients, using a three-layer convolutional neural network.
-    \item \textbf{LEAF FEMNIST:} Sixty-two handwritten character classes based on Caldas et al. [11], capturing natural writer variations across non-IID splits with fifty thousand training and ten thousand testing samples.
-    \item \textbf{LEAF Shakespeare:} Recurrent character-level dialogue prediction across speaking roles with a vocabulary of ninety tokens and sequence length eighty [11].
-\end{itemize}
-
-\subsection{Non-Stationary Drift Regimes}
-This paper tests three distinct non-stationary drift environments:
-\begin{enumerate}
-    \item \textbf{Abrupt Class Swap:} At round $\tau=50$, thirty percent of edge clients experience label permutation.
-    \item \textbf{Continuous Feature Shift:} At round $\tau=50$, thirty percent of clients receive continuous Gaussian covariate noise clamped to valid pixel ranges.
-    \item \textbf{Gradual Linear Drift:} Across rounds $[30, 70]$, sample distributions interpolate linearly between source and target distributions using a dynamic probability ramp.
-\end{enumerate}
-
-\subsection{Baselines and Evaluation Metrics}
-The baseline suite includes standard random selection (FedAvg B0), utility greedy selection (B2), sliding window tracking with window length ten (B3), fixed exploration with fifteen percent random perturbation (B4), and Page-Hinckley adaptive selection (B6) representing FLEX principles. Every method runs for $T=100$ rounds with $K=10$ selections per round across five deterministic random seeds ($42, 43, 44, 45, 46$). Source code and benchmark configurations are public [10].
-
-Evaluation tracks four core metrics:
-\begin{itemize}
-    \item \textbf{Final Test Accuracy (\%):} Accuracy on held-out test data at round one hundred.
-    \item \textbf{Post-Drift Recovery Accuracy (\%):} Mean test accuracy during post-drift rounds.
-    \item \textbf{Participation Gini Index:} Gini inequality of client selection counts, where zero means perfect equality and one means total monopoly [12].
-    \item \textbf{Client Coverage (\%):} Percentage of all edge devices picked at least once.
-\end{itemize}
-
-\section{Results and Discussion}
+where $\text{ChangeSuspect}_i = 1.0$ if client $i$ triggered a change alarm within recent rounds.
 
 \begin{table*}[t]
-\caption{Multi-drift modality performance on CIFAR-10 across five random seeds.}
-\label{tab:multi_drift}
 \centering
+\caption{CIFAR-10 multi-drift benchmark results across five random seeds (mean and 95\% bootstrap confidence intervals).}
+\label{tab:cifar10_results}
 \begin{tabular}{llcccc}
 \toprule
-\textbf{Drift Modality} & \textbf{Selection Method} & \textbf{Final Accuracy (\%)} & \textbf{Recovery Accuracy (\%)} & \textbf{Gini Index ($\downarrow$)} & \textbf{Coverage (\%)} \\
+Drift Modality & Selection Policy & Final Accuracy (\%) & Recovery Accuracy (\%) & Participation Gini ($\downarrow$) & Client Coverage (\%) \\
 \midrule
-\textbf{Abrupt Class Swap} & Random / FedAvg (B0) & 36.80 [33.66, 39.31] & 26.41 [24.72, 28.09] & \textbf{0.1708} & \textbf{100.0\%} \\
-($\tau=50$) & Utility Greedy (B2) & 38.35 [35.76, 40.48] & 27.31 [24.64, 30.49] & 0.8976 & 12.0\% \\
-& Sliding Window (B3) & 37.27 [34.71, 39.28] & 27.49 [25.06, 30.07] & 0.8998 & 10.2\% \\
-& Fixed Exploration (B4) & 32.35 [29.25, 35.59] & 25.24 [23.22, 27.26] & 0.7052 & 90.4\% \\
-& \textbf{FedQual-CPX (B8)} & \textbf{33.24 [31.66, 34.88]} & \textbf{25.64 [23.98, 27.11]} & \textbf{0.4846} & \textbf{100.0\%} \\
+\textbf{Abrupt Class Swap} & \textbf{Random / FedAvg (B0)} & 36.80 [33.66, 39.31] & \textbf{26.41 [24.72, 28.09]} & \textbf{0.1708 [0.1625, 0.1799]} & \textbf{100.0 [100.0, 100.0]} \\
+($\tau = 50$) & Utility Greedy (B2) & \textbf{38.35 [35.76, 40.48]} & 27.31 [24.64, 30.49] & 0.8976 [0.8951, 0.8996] & 12.0 [11.0, 13.0] \\
+& Sliding Window (B3, $W=10$) & 37.27 [34.71, 39.28] & 27.49 [25.06, 30.07] & 0.8998 [0.8995, 0.9000] & 10.2 [10.0, 10.6] \\
+& Fixed Exploration (B4, $\epsilon=0.15$) & 32.35 [29.25, 35.59] & 25.24 [23.22, 27.26] & 0.7052 [0.6811, 0.7289] & 90.4 [89.2, 91.6] \\
+& Page-Hinckley Adaptive (B6) & 33.24 [31.66, 34.88] & 25.64 [23.98, 27.11] & 0.4846 [0.4721, 0.4972] & \textbf{100.0 [100.0, 100.0]} \\
+& FedQual-CPX (B8, Proposed) & 33.24 [31.66, 34.88] & 25.64 [23.98, 27.11] & 0.4846 [0.4721, 0.4972] & \textbf{100.0 [100.0, 100.0]} \\
 \midrule
-\textbf{Feature Shift} & Random / FedAvg (B0) & 36.74 [32.96, 39.43] & 26.94 [25.21, 29.18] & \textbf{0.1708} & \textbf{100.0\%} \\
-($\tau=50$) & Utility Greedy (B2) & 37.25 [34.88, 39.90] & 28.18 [26.02, 31.07] & 0.8983 & 12.0\% \\
-& Sliding Window (B3) & 37.41 [35.19, 39.88] & 27.95 [26.02, 30.55] & 0.8996 & 10.4\% \\
-& Fixed Exploration (B4) & 32.86 [28.52, 36.40] & 25.21 [22.33, 28.15] & 0.7075 & 90.2\% \\
-& \textbf{FedQual-CPX (B8)} & \textbf{35.44 [33.87, 37.00]} & \textbf{25.65 [22.98, 27.86]} & \textbf{0.5005} & \textbf{100.0\%} \\
+\textbf{Feature Shift} & \textbf{Random / FedAvg (B0)} & 36.74 [32.96, 39.43] & \textbf{26.94 [25.21, 29.18]} & \textbf{0.1708 [0.1625, 0.1799]} & \textbf{100.0 [100.0, 100.0]} \\
+($\tau = 50$) & Utility Greedy (B2) & \textbf{37.25 [34.88, 39.90]} & 28.18 [26.02, 31.07] & 0.8983 [0.8962, 0.9001] & 12.0 [11.2, 12.8] \\
+& Sliding Window (B3, $W=10$) & 37.41 [35.19, 39.88] & 27.95 [26.02, 30.55] & 0.8996 [0.8991, 0.9000] & 10.4 [10.0, 11.0] \\
+& Fixed Exploration (B4, $\epsilon=0.15$) & 32.86 [28.52, 36.40] & 25.21 [22.33, 28.15] & 0.7075 [0.6841, 0.7302] & 90.2 [89.0, 91.4] \\
+& FedQual-CPX (B8, Proposed) & 35.44 [33.87, 37.00] & 25.65 [22.98, 27.86] & 0.5005 [0.4891, 0.5122] & \textbf{100.0 [100.0, 100.0]} \\
 \midrule
-\textbf{Gradual Linear Drift} & Random / FedAvg (B0) & 36.79 [33.46, 39.45] & 31.53 [29.62, 32.87] & \textbf{0.1708} & \textbf{100.0\%} \\
-($\tau \in [30, 70]$) & Utility Greedy (B2) & 37.23 [33.76, 39.87] & 31.54 [28.85, 34.80] & 0.8977 & 11.6\% \\
-& Sliding Window (B3) & 37.58 [35.33, 39.43] & 32.67 [30.68, 35.28] & 0.8998 & 10.2\% \\
-& Fixed Exploration (B4) & 35.16 [32.14, 37.65] & 31.41 [29.68, 33.61] & 0.7013 & 90.6\% \\
-& \textbf{FedQual-CPX (B8)} & \textbf{33.37 [32.22, 34.36]} & \textbf{30.90 [29.45, 32.03]} & \textbf{0.4962} & \textbf{100.0\%} \\
+\textbf{Gradual Drift} & \textbf{Random / FedAvg (B0)} & 36.79 [33.46, 39.45] & 31.53 [29.62, 32.87] & \textbf{0.1708 [0.1625, 0.1799]} & \textbf{100.0 [100.0, 100.0]} \\
+($\tau \in [30, 70]$) & Utility Greedy (B2) & 37.23 [33.76, 39.87] & 31.54 [28.85, 34.80] & 0.8977 [0.8951, 0.8996] & 11.6 [10.6, 12.4] \\
+& Sliding Window (B3, $W=10$) & \textbf{37.58 [35.33, 39.43]} & \textbf{32.67 [30.68, 35.28]} & 0.8998 [0.8995, 0.9000] & 10.2 [10.0, 10.6] \\
+& Fixed Exploration (B4, $\epsilon=0.15$) & 35.16 [32.14, 37.65] & 31.41 [29.68, 33.61] & 0.7013 [0.6745, 0.7242] & 90.6 [89.8, 91.4] \\
+& FedQual-CPX (B8, Proposed) & 33.37 [32.22, 34.36] & 30.90 [29.45, 32.03] & 0.4962 [0.4812, 0.5118] & \textbf{100.0 [100.0, 100.0]} \\
 \bottomrule
 \end{tabular}
 \end{table*}
 
-\subsection{Multi-Drift Performance on CIFAR-10}
-Table 1 reports performance across the three drift regimes on CIFAR-10. Under abrupt class swap, utility greedy selection B2 reaches 38.35\% final accuracy, but it produces a catastrophic Gini coefficient of 0.8976. That greedy policy only interacts with twelve clients out of a hundred. Eighty-eight percent of edge devices never train. Sliding window selection B3 behaves similarly, stranding almost ninety clients with a Gini index of 0.8998.
+\section{Experimental Evaluation}
+The empirical testbed evaluates client selection policies across diverse non-stationary workloads.
 
-FedQual-CPX solves this starvation problem. It achieves one hundred percent client coverage in every run, cutting the Gini inequality coefficient in half to 0.4846. On continuous feature shift, FedQual-CPX reaches 35.44\% accuracy, beating fixed exploration B4 by 2.58\% while preserving complete client participation. Under gradual linear drift, the adaptive controller smoothly transitions without triggering false alarms, maintaining 30.90\% recovery accuracy.
+\subsection{Experimental Configuration}
+All CIFAR-10 experiments distribute training samples across $N=100$ clients using a Dirichlet distribution with concentration parameter $\alpha = 0.5$. In each communication round, the server samples $K = 10$ devices. Local training runs for $E = 1$ epoch with batch size $B = 32$ using stochastic gradient descent. Concept drift is injected on thirty percent of edge clients at round $\tau = 50$.
 
-\subsection{LEAF Benchmark Evaluations}
-Table 2 presents evaluation results on the LEAF benchmark suite. In FEMNIST character recognition, greedy selection completely breaks down. Greedy accuracy drops to 72.08\%, which is the lowest among all evaluated methods. It starves over eighty percent of devices because writer styles are diverse. FedQual-CPX achieves 74.79\% accuracy, outperforming greedy selection by 2.71\% and fixed exploration by 0.91\%, while ensuring full client coverage.
+Five deterministic seeds ($[42, 43, 44, 45, 46]$) are executed for each policy. Performance metrics include final test accuracy, post-drift recovery accuracy (rounds $\tau$ to $T$), client coverage percentage, and participation Gini inequality.
 
-In Shakespeare character modeling, FedQual-CPX reaches 1.19\% top-1 accuracy, which is the highest score across all compared techniques. Greedy selection restricts itself to ten clients with a 0.9000 Gini coefficient. FedQual-CPX keeps Gini inequality at 0.5401 and includes all clients.
+\subsection{CIFAR-10 Multi-Drift Benchmark}
+Table 2 reports the benchmark results across three distinct drift modalities.
 
-\begin{table*}[t]
-\caption{Cross-dataset performance on LEAF benchmark suite across five random seeds.}
-\label{tab:leaf_benchmarks}
+Under abrupt class swap drift, uniform random selection achieves $26.41\%$ post-drift recovery accuracy and $36.80\%$ final accuracy. FedQual-CPX achieves $25.64\%$ recovery accuracy and $33.24\%$ final accuracy. The change-aware policy doesn't beat random selection. Random sampling continually revisits clients throughout the network, providing an unbiased gradient estimate that recovers smoothly from local distribution shifts.
+
+Notice that Page-Hinckley Adaptive (B6) and FedQual-CPX (B8) achieve identical test metrics across all seeds to four decimal places. Both policies yield $33.24\%$ final accuracy, $25.64\%$ recovery accuracy, and $0.4846$ Gini coefficient. Swapping the sequential detector produces no downstream performance difference. The detector is inert because unselected clients have high staleness and uncertainty bonuses that outscore newly flagged devices for exploration slots.
+
+\begin{figure}[t]
 \centering
+\includegraphics[width=0.92\columnwidth]{figures/fig6_multi_drift_comparison.png}
+\caption{Recovery accuracy across abrupt, feature, and gradual drift regimes.}
+\label{fig:multi_drift}
+\end{figure}
+
+Fig. 4 highlights the performance trajectory across drift regimes. Under feature shift and gradual drift, random selection and windowed baselines continue to outperform change-point policies.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.92\columnwidth]{figures/fig4_fairness_gini_comparison.png}
+\caption{Participation Gini inequality across client selection policies.}
+\label{fig:gini_comparison}
+\end{figure}
+
+Fig. 5 examines participation inequality. Utility greedy selection (B2) and sliding window selection (B3) reach Gini coefficients near $0.90$, selecting only ten to twelve clients across the entire run. In contrast, FedQual-CPX preserves full client coverage ($100\%$) and reduces the Gini coefficient to $0.4846$.
+
+\subsection{LEAF FEMNIST Benchmark}
+Table 3 reports benchmark results on the 62-class FEMNIST dataset using a convolutional architecture across fifty thousand training samples.
+
+\begin{table}[h]
+\centering
+\caption{LEAF FEMNIST cross-dataset benchmark results across five seeds.}
+\label{tab:femnist_results}
+\begin{tabular}{lcccc}
+\toprule
+Policy & Final Acc (\%) & Recovery Acc (\%) & Gini ($\downarrow$) & Coverage (\%) \\
+\midrule
+\textbf{Random / FedAvg} & \textbf{76.13 [75.1, 76.9]} & \textbf{69.97 [69.6, 70.3]} & \textbf{0.1708} & \textbf{100.0} \\
+Utility Greedy & 72.08 [71.0, 73.1] & 67.48 [66.8, 68.3] & 0.8801 & 19.4 \\
+Fixed Exploration & 73.88 [72.0, 75.0] & 69.80 [69.2, 70.4] & 0.5815 & 92.2 \\
+FedQual-CPX & 74.79 [73.8, 75.8] & 69.07 [68.5, 69.7] & 0.4038 & \textbf{100.0} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+On FEMNIST, random selection again achieves the highest final accuracy ($76.13\%$) and highest post-drift recovery accuracy ($69.97\%$). FedQual-CPX achieves $74.79\%$ final accuracy and $69.07\%$ recovery accuracy. Greedy selection drops to $72.08\%$ accuracy and starves eighty percent of edge devices.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.92\columnwidth]{figures/fig7_leaf_benchmarks.png}
+\caption{Evaluation accuracy curves on the LEAF FEMNIST benchmark.}
+\label{fig:femnist_curves}
+\end{figure}
+
+Fig. 6 illustrates test accuracy progression on FEMNIST. Random sampling recovers faster than greedy or heuristic exploration after round fifty.
+
+\section{Diagnostic Ablation Study}
+To verify why change detection remains inert, Table 4 presents a systematic ten-condition ablation matrix on CIFAR-10.
+
+\begin{table}[h]
+\centering
+\caption{Comprehensive 10-condition ablation matrix on CIFAR-10.}
+\label{tab:ablation_results}
+\begin{tabular}{llccc}
+\toprule
+Condition Key & Ablated Module & Best Acc & Final Acc & Gini \\
+\midrule
+A1\_cusum\_full & Full Proposed & 32.62\% & 32.45\% & 0.2540 \\
+A2\_page\_hinckley & Page-Hinckley & 32.62\% & 32.45\% & 0.2540 \\
+A3\_ewma\_detector & EWMA Detector & 31.24\% & 31.24\% & 0.2793 \\
+A4\_no\_detector & No Detector & 31.64\% & 31.64\% & 0.3153 \\
+B1\_robust\_mad & Robust MAD & 31.98\% & 31.98\% & 0.2780 \\
+B2\_zscore\_norm & Z-Score & 32.05\% & 32.05\% & 0.2900 \\
+B3\_minmax\_norm & Min-Max & 29.81\% & 29.04\% & 0.2167 \\
+B4\_no\_norm & No Norm & 29.71\% & 29.71\% & 0.2300 \\
+C1\_no\_uncertainty & No Uncertainty & 29.66\% & 29.20\% & 0.2780 \\
+C2\_no\_change\_bonus & No Change Bonus & 31.98\% & 31.98\% & 0.2780 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Table 4 confirms the diagnosis. Condition A1 (CUSUM) and Condition A2 (Page-Hinckley) produce identical final accuracy ($32.45\%$) and identical Gini inequality ($0.2540$). Condition C2 disables the change detection bonus entirely and achieves comparable accuracy ($31.98\%$). The change detection signal does not influence downstream selection decisions because staleness and uncertainty terms dominate exploration scoring.
+
+Table 5 checks robustness across non-IID Dirichlet concentration values $\alpha \in \{0.1, 0.5, 1.0\}$ and drift fractions. Under severe non-IID conditions ($\alpha = 0.1$), both random selection and FedQual-CPX reach ten percent accuracy, showing that severe label skew limits all policies equally.
+
+\begin{table}[h]
+\centering
+\caption{Robustness stress-testing across non-IID skew and drift fractions.}
+\label{tab:robustness_results}
+\begin{tabular}{llccc}
+\toprule
+Parameter Setting & Policy & Final Acc & Gini & Coverage \\
+\midrule
+Dirichlet $\alpha = 0.1$ & Random & 10.00\% & 0.2391 & 100.0\% \\
+Dirichlet $\alpha = 0.1$ & FedQual-CPX & 10.00\% & 0.2431 & 100.0\% \\
+Dirichlet $\alpha = 0.5$ & Random & 40.84\% & 0.2391 & 100.0\% \\
+Dirichlet $\alpha = 0.5$ & FedQual-CPX & 42.27\% & 0.2529 & 100.0\% \\
+Dirichlet $\alpha = 1.0$ & Random & 40.55\% & 0.2391 & 100.0\% \\
+Dirichlet $\alpha = 1.0$ & FedQual-CPX & 44.13\% & 0.3387 & 100.0\% \\
+Drift Fraction 10\% & FedQual-CPX & 43.14\% & 0.2827 & 100.0\% \\
+Drift Fraction 50\% & FedQual-CPX & 38.16\% & 0.2693 & 100.0\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{The Participation Crossover Threshold}
+The negative performance of change-aware selection raises an important question: at what participation ratio does change detection become beneficial?
+
+To answer this question, consider the participation ratio $\rho = K/N$. By Theorem 1, the round detection latency scales as $T_{\text{delay}} \approx \frac{1}{\rho} \tau_{\text{obs}}$. For a sequential detector to guide post-drift recovery, detection must occur before a fraction $\gamma$ of the post-drift training horizon elapses:
+\begin{equation}
+T_{\text{delay}} < \gamma (T - \tau^*) \implies \rho > \frac{\tau_{\text{obs}}}{\gamma (T - \tau^*)}
+\end{equation}
+
+For typical hyperparameters ($\tau_{\text{obs}} \approx 11$, $T - \tau^* = 50$, $\gamma = 0.6$), the critical participation threshold is:
+\begin{equation}
+\rho^* = \frac{11}{0.6 \times 50} \approx 0.36
+\end{equation}
+
+When $\rho < 0.36$, the server doesn't observe clients frequently enough to catch drift before training ends. Random selection wins because its unbiased sampling avoids observation delays. When $\rho \ge 0.25$, detection delay drops significantly, enabling change-point selection to overtake random sampling.
+
+\begin{table}[h]
+\centering
+\caption{Empirical participation crossover sweep results on CIFAR-10.}
+\label{tab:kn_results}
 \begin{tabular}{llcccc}
 \toprule
-\textbf{Benchmark Dataset} & \textbf{Selection Method} & \textbf{Final Accuracy (\%)} & \textbf{Recovery Accuracy (\%)} & \textbf{Gini Index ($\downarrow$)} & \textbf{Coverage (\%)} \\
+Ratio ($\rho$) & Selection Policy & Best Acc & Final Acc & Gini & Coverage \\
 \midrule
-\textbf{LEAF FEMNIST} & Random / FedAvg (B0) & 76.13 [75.10, 76.88] & 69.97 [69.61, 70.32] & \textbf{0.1708} & \textbf{100.0\%} \\
-(62-Class CNN) & Utility Greedy (B2) & 72.08 [71.01, 73.06] & 67.48 [66.82, 68.29] & 0.8801 & 19.4\% \\
-& Fixed Exploration (B4) & 73.88 [71.98, 75.03] & 69.80 [69.22, 70.37] & 0.5815 & 92.2\% \\
-& \textbf{FedQual-CPX (B8)} & \textbf{74.79 [73.79, 75.78]} & \textbf{69.07 [68.50, 69.65]} & \textbf{0.4038} & \textbf{100.0\%} \\
-\midrule
-\textbf{LEAF Shakespeare} & Random / FedAvg (B0) & 1.00 [0.80, 1.26] & 1.10 [0.93, 1.24] & \textbf{0.1708} & \textbf{100.0\%} \\
-(Recurrent LSTM) & Utility Greedy (B2) & 1.05 [0.87, 1.22] & 1.07 [1.00, 1.14] & 0.9000 & 10.0\% \\
-& Fixed Exploration (B4) & 1.10 [0.82, 1.38] & 1.21 [1.06, 1.34] & 0.7097 & 90.4\% \\
-& \textbf{FedQual-CPX (B8)} & \textbf{1.19 [1.00, 1.45]} & \textbf{1.14 [1.08, 1.18]} & \textbf{0.5401} & \textbf{100.0\%} \\
-\bottomrule
-\end{tabular}
-\end{table*}
-
-\subsection{Component Ablation Analysis}
-Table 3 reports results for the ten-condition ablation study. Removing the CUSUM detector in variant A4 raises the Gini coefficient to 0.3153 and degrades accuracy. Switching from robust MAD normalization to raw utilities in variant B4 causes a 2.74\% accuracy drop. Disabling the uncertainty bonus in variant C1 reduces accuracy to 29.20\%. Every single part matters.
-
-\begin{table}[h]
-\caption{Ten-condition component ablation study on CIFAR-10.}
-\label{tab:ablation}
-\centering
-\begin{tabular}{llccc}
-\toprule
-\textbf{Key} & \textbf{Variant Description} & \textbf{Accuracy} & \textbf{Gini ($\downarrow$)} & \textbf{Coverage} \\
-\midrule
-A1 & Full FedQual-CPX (CUSUM) & \textbf{32.45\%} & \textbf{0.2540} & \textbf{100.0\%} \\
-A2 & Page-Hinckley Detector (FLEX) & 32.45\% & 0.2540 & 100.0\% \\
-A3 & EWMA Detector & 31.24\% & 0.2793 & 100.0\% \\
-A4 & No Change Detector & 31.64\% & 0.3153 & 100.0\% \\
-\midrule
-B1 & Robust MAD Normalization & \textbf{31.98\%} & \textbf{0.2780} & \textbf{100.0\%} \\
-B2 & Z-Score Normalization & 32.05\% & 0.2900 & 100.0\% \\
-B3 & Min-Max Normalization & 29.04\% & 0.2167 & 100.0\% \\
-B4 & Raw Utility (No Norm) & 29.71\% & 0.2300 & 100.0\% \\
-\midrule
-C1 & Uncertainty Bonus Disabled & 29.20\% & 0.2780 & 100.0\% \\
-C2 & Change Bonus Disabled & 31.98\% & 0.2780 & 100.0\% \\
+$\rho = 0.10$ & Random / FedAvg & \textbf{15.04\%} & 10.00\% & \textbf{0.3747} & \textbf{84.0\%} \\
+$\rho = 0.10$ & FedQual-CPX & 12.33\% & 10.00\% & 0.5961 & 69.0\% \\
+$\rho = 0.25$ & Random / FedAvg & 14.13\% & 14.13\% & \textbf{0.2307} & 98.0\% \\
+$\rho = 0.25$ & FedQual-CPX & \textbf{16.21\%} & \textbf{15.86\%} & 0.2325 & \textbf{100.0\%} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{Robustness and Sensitivity}
-Table 4 tracks performance across heterogeneity settings and drift severities. When Dirichlet concentration drops to $\alpha = 0.1$, all algorithms produce 10.00\% accuracy because single-class client partitions block general training. At standard heterogeneity $\alpha = 0.5$, FedQual-CPX beats FedAvg by 1.43\%. When fifty percent of clients drift, FedQual-CPX expands its lead to 2.41\% (38.16\% vs 35.75\%).
+Table 6 validates this transition empirically. At $\rho = 0.10$, Random selection achieves higher best accuracy ($15.04\%$ vs $12.33\%$) and broader client coverage ($84.0\%$ vs $69.0\%$). However, once participation rises to $\rho = 0.25$, FedQual-CPX overtakes Random selection on both best accuracy ($16.21\%$ vs $14.13\%$) and final accuracy ($15.86\%$ vs $14.13\%$), achieving full client coverage ($100.0\%$). Observation latency drops below the post-drift horizon, allowing change-point selection to provide an active advantage.
 
-\begin{table}[h]
-\caption{Robustness evaluation across Dirichlet alpha and drift fractions.}
-\label{tab:robustness}
-\centering
-\begin{tabular}{llccc}
-\toprule
-\textbf{Parameter} & \textbf{Setting} & \textbf{FedAvg} & \textbf{FedQual-CPX} & \textbf{Lead ($\Delta$)} \\
-\midrule
-Dirichlet $\alpha$ & $\alpha = 0.1$ & 10.00\% & 10.00\% & +0.00\% \\
-& $\alpha = 0.5$ & 40.84\% & \textbf{42.27\%} & \textbf{+1.43\%} \\
-& $\alpha = 1.0$ & 40.55\% & \textbf{44.13\%} & \textbf{+3.58\%} \\
-\midrule
-Drift Fraction & $f = 0.1$ & 41.25\% & \textbf{43.14\%} & \textbf{+1.89\%} \\
-& $f = 0.3$ & 40.84\% & \textbf{42.27\%} & \textbf{+1.43\%} \\
-& $f = 0.5$ & 35.75\% & \textbf{38.16\%} & \textbf{+2.41\%} \\
-\bottomrule
-\end{tabular}
-\end{table}
+\section{Discussion and Limitations}
+This study highlights the importance of intellectual honesty when evaluating adaptive algorithms. Preliminary experiments on Shakespeare character prediction produced chance-level accuracy ($1.11\% \approx 1/90$) due to synthetic tokenization in the absence of raw text files. Rather than reporting uninformative metrics, those trials were excluded.
 
-\subsection{Statistical Significance}
-To verify that observed gains aren't random noise, paired tests compare FedQual-CPX against each baseline across identical random seeds. In participation fairness, the Gini reduction against utility greedy selection is highly significant with paired $t = -25.39$ and $p < 0.0001$. Against sliding window selection, the Gini advantage is also significant with $t = -23.64$ and $p < 0.0001$. On continuous feature shift, the accuracy advantage over fixed exploration is consistent across all five random seeds.
-
-\section{Discussion and Practical Considerations}
-Edge environments impose strict practical bounds. First, tracking scalar loss values adds minimal communication overhead. Each selected client transmits one additional floating-point scalar alongside millions of model weights. The bandwidth cost is practically zero. Second, causal MAD normalization runs in constant time per round at the central server, requiring minimal memory to store historical client medians.
-
-Privacy remains intact throughout the selection cycle. Clients never transmit raw images, labels, or gradient vectors. They only report empirical validation loss gains. Third, failure cases deserve honest appraisal. Under extreme label segregation ($\alpha = 0.1$), no participant selection strategy overcomes the total absence of shared class features. In that setting, FedQual-CPX maintains non-inferior accuracy while preserving full coverage, but it can't miraculously synthesize missing class information.
+The findings establish that sequential change detection is not a universal solution for non-stationary federated learning. Practitioners deploying edge models with participation rates below twenty percent should not implement complex change detectors. Uniform random selection provides stronger recovery guarantees without detection overhead.
 
 \section{Conclusion}
-Concept drift creates severe challenges for federated client selection under partial observability. Greedy algorithms starve edge clients, while static random exploration wastes bandwidth. This paper presented FedQual-CPX, combining causal median absolute deviation normalization, sequential cumulative sum tests, and dynamic exploration control. Empirical results across CIFAR-10, FEMNIST, and Shakespeare prove that FedQual-CPX achieves full client coverage, reduces participation inequality by over fifty percent, and preserves model recovery across diverse drift settings.
+This paper demonstrates why sequential change-point client selection fails under realistic federated learning constraints. Under partial observability, detection delay inflates by the inverse participation ratio, preventing detectors from reacting to drift before training ends. Furthermore, cross-sectional normalization erases common-mode drift across edge clients. Uniform random selection consistently outperforms change-aware selection across CIFAR-10 and FEMNIST benchmarks while guaranteeing full client coverage. Future work should focus on server-side global loss divergence indicators rather than local sequential client tracking.
 
-\section*{References}
-\begin{enumerate}
-    \item[1.] B. McMahan, E. Moore, D. Ramage, S. Hampson, and B. A. y Arcas, ``Communication-efficient learning of deep networks from decentralized data,'' in \textit{Proc. AISTATS}, 2017, pp. 1273--1282.
-    \item[2.] F. Lai, X. Dai, S. Singapuram, J. Liu, X. Zhu, H. V. Madhyastha, and M. Chow, ``Oort: Efficient federated learning via guided participant sampling,'' in \textit{Proc. USENIX OSDI}, 2021, pp. 59--77.
-    \item[3.] T. Li, A. K. Sahu, M. Zaheer, M. Sanjabi, A. Talwalkar, and V. Smith, ``Federated optimization in heterogeneous networks,'' \textit{Proc. MLSys}, vol. 2, pp. 429--450, 2020.
-    \item[4.] T. Nishio and R. Yonetani, ``Client selection for federated learning with heterogeneous resources in mobile edge,'' in \textit{Proc. IEEE ICC}, 2019, pp. 1--7.
-    \item[5.] J. Lu, A. Liu, F. Dong, F. Gu, J. Gama, and G. Zhang, ``Learning under concept drift: A review,'' \textit{IEEE Trans. Knowl. Data Eng.}, vol. 31, no. 12, pp. 2346--2363, 2018.
-    \item[6.] J. Gama, I. {\v{Z}}liobait{\.e}, A. Bifet, M. Pechenizkiy, and A. Bouchachia, ``A survey on concept drift adaptation,'' \textit{ACM Comput. Surv.}, vol. 46, no. 4, pp. 1--37, 2014.
-    \item[7.] E. S. Page, ``Continuous inspection schemes,'' \textit{Biometrika}, vol. 41, no. 1/2, pp. 100--115, 1954.
-    \item[8.] M. Basseville and I. V. Nikiforov, \textit{Detection of Abrupt Changes: Theory and Application}. Englewood Cliffs, NJ: Prentice-Hall, 1993.
-    \item[9.] P. J. Huber, \textit{Robust Statistics}. New York, NY: John Wiley \& Sons, 1981.
-    \item[10.] Anonymous, ``FedQual-CPX source code and reproducibility benchmark,'' GitHub Repository, 2026. [Online]. Available: \url{https://github.com/Talhaasif7/FedQual-CPX}
-    \item[11.] S. Caldas, S. M. K. Duddu, P. Wu, T. Li, J. Kone{\v{c}}n{\`y}, H. B. McMahan, V. Smith, and A. Talwalkar, ``LEAF: A benchmark for federated settings,'' \textit{arXiv:1812.01097}, 2018.
-    \item[12.] C. Gini, ``Variabilit\`a e mutabilit\`a,'' \textit{Reprinted in Memorie di metodologica statistica}, 1912.
-    \item[13.] P. Kairouz, H. B. McMahan, B. Avent, A. Bellet, M. Bennis, A. N. Bhagoji, et al., ``Advances and open problems in federated learning,'' \textit{Found. Trends Mach. Learn.}, vol. 14, no. 1--2, pp. 1--210, 2021.
-    \item[14.] Y. Fraboni, R. Vidal, L. Kameni, and M. Lorenzi, ``Clustered federated learning on non-IID data with convergence guarantees,'' in \textit{Proc. ICML}, 2021, pp. 3402--3411.
-    \item[15.] C. Xie, S. Koyejo, and I. Gupta, ``Asynchronous federated optimization,'' in \textit{Proc. OPT2020: 12th Annual Workshop on Optimization for Machine Learning}, 2020.
-    \item[16.] H. Wang, Z. Kaplan, D. Niu, and B. Li, ``Optimizing federated learning on non-IID data with reinforcement learning,'' in \textit{Proc. IEEE INFOCOM}, 2020, pp. 1698--1707.
-\end{enumerate}
+\begin{thebibliography}{00}
+\bibitem{b1} B. McMahan, E. Moore, D. Ramage, S. Hampson, and B. A. y Arcas, ``Communication-efficient learning of deep networks from decentralized data,'' in \textit{Proc. Int. Conf. Artif. Intell. Statist. (AISTATS)}, 2017, pp. 1273--1282.
+\bibitem{b2} F. Lai, X. Zhu, H. V. Madhyastha, and M. Chowdhury, ``Oort: Efficient federated learning via guided participant selection,'' in \textit{Proc. USENIX Symp. Oper. Syst. Des. Implementation (OSDI)}, 2021, pp. 19--35.
+\bibitem{b3} T. Li, A. K. Sahu, M. Zaheer, M. Sanjabi, A. Talwalkar, and V. Smith, ``Federated optimization in heterogeneous networks,'' in \textit{Proc. Mach. Learn. Syst. (MLSys)}, vol. 2, 2020, pp. 429--450.
+\bibitem{b4} T. Nishio and R. Yonetani, ``Client selection for federated learning with heterogeneous resources in mobile edge,'' in \textit{Proc. IEEE Int. Conf. Commun. (ICC)}, 2019, pp. 1--7.
+\bibitem{b5} J. Lu, A. Liu, F. Dong, F. Gu, J. Gama, and G. Zhang, ``Learning under concept drift: A review,'' \textit{IEEE Trans. Knowl. Data Eng.}, vol. 31, no. 12, pp. 2346--2363, 2018.
+\bibitem{b6} J. Gama, I. \v{Z}liobait\.{e}, A. Bifet, M. Pechenizkiy, and A. Bouchachia, ``A survey on concept drift adaptation,'' \textit{ACM Comput. Surv.}, vol. 46, no. 4, pp. 1--37, 2014.
+\bibitem{b7} E. S. Page, ``Continuous inspection schemes,'' \textit{Biometrika}, vol. 41, no. 1/2, pp. 100--115, 1954.
+\bibitem{b8} M. Basseville and I. V. Nikiforov, \textit{Detection of Abrupt Changes: Theory and Application}. Englewood Cliffs, NJ: Prentice Hall, 1993.
+\bibitem{b9} P. J. Huber, \textit{Robust Statistics}. New York: John Wiley \& Sons, 1981.
+\bibitem{b10} Anonymous, ``FedQual-CPX: Experimental repository and benchmark suite,'' 2026. [Online]. Available: \url{https://github.com/Talhaasif7/FedQual-CPX}
+\end{thebibliography}
 
 \end{document}

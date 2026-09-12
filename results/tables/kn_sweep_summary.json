@@ -1,0 +1,38 @@
+[
+  {
+    "k": 10,
+    "ratio": 0.1,
+    "method": "random",
+    "best_accuracy": 0.1504,
+    "final_accuracy": 0.1,
+    "gini": 0.3747,
+    "coverage": 0.84
+  },
+  {
+    "k": 10,
+    "ratio": 0.1,
+    "method": "fedqual_cpx",
+    "best_accuracy": 0.1233,
+    "final_accuracy": 0.1,
+    "gini": 0.5961,
+    "coverage": 0.69
+  },
+  {
+    "k": 25,
+    "ratio": 0.25,
+    "method": "random",
+    "best_accuracy": 0.1413,
+    "final_accuracy": 0.1413,
+    "gini": 0.2307,
+    "coverage": 0.98
+  },
+  {
+    "k": 25,
+    "ratio": 0.25,
+    "method": "fedqual_cpx",
+    "best_accuracy": 0.1621,
+    "final_accuracy": 0.1586,
+    "gini": 0.2325,
+    "coverage": 1.0
+  }
+]
