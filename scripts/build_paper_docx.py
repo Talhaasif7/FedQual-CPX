@@ -248,9 +248,9 @@ def build_docx(output_path: str = "paper.docx"):
     add_p(
         "This paper provides four main contributions:\n"
         "1. It proves the Delay Inflation Theorem, showing that detection latency inflates by the inverse participation ratio under partial observability.\n"
-        "2. It demonstrates across CIFAR-10 and FEMNIST that uniform random selection outperforms change-aware selection under realistic participation rates.\n"
+        "2. It demonstrates across CIFAR-10 and EMNIST-ByClass that uniform random selection outperforms change-aware selection under realistic participation rates.\n"
         "3. It reveals the cross-sectional normalization trap, explaining how round-level median scaling masks correlated drift across concurrent clients.\n"
-        "4. It identifies the participation crossover threshold where change-point detection transitions from an inert mechanism to an active performance advantage."
+        "4. It derives the predicted participation threshold rho* approx 0.36 required for sequential detectors to overcome observation latency, empirically verifying the barrier at rho in {0.05, 0.10} and outlining conditions for future above-threshold validation."
     )
 
     add_fig("figures/architecture_overview.png", "Figure 1: System architecture of the adaptive federated client selection framework.")
@@ -499,7 +499,7 @@ def build_docx(output_path: str = "paper.docx"):
     run_t3.font.size = Pt(8.5)
     run_t3.font.italic = True
 
-    add_fig("figures/fig7_leaf_benchmarks.png", "Figure 6: Evaluation accuracy curves on the EMNIST-ByClass benchmark.")
+    add_fig("figures/fig7_cross_dataset_benchmarks.png", "Figure 6: Evaluation accuracy curves on the EMNIST-ByClass benchmark.")
 
     add_p(
         "On EMNIST-ByClass, random selection again achieves the highest final accuracy (76.13%) and highest post-drift recovery accuracy (69.97%). "
@@ -611,22 +611,23 @@ def build_docx(output_path: str = "paper.docx"):
     run_t5.font.size = Pt(8.5)
     run_t5.font.italic = True
 
-    # 7. The Participation Crossover Threshold
-    add_h1("7. The Participation Crossover Threshold")
+    # 7. A Predicted Participation Threshold
+    add_h1("7. A Predicted Participation Threshold")
     add_p(
-        "The negative performance of change-aware selection raises an important question: at what participation ratio does change detection become beneficial? "
-        "To answer this question, consider the participation ratio rho = K / N. "
-        "By Theorem 1, round detection latency scales as T_delay = (1 / rho) * tau_obs. "
+        "The consistent deficit of change-aware selection under realistic participation rates raises a fundamental question: at what participation ratio could sequential change detection theoretically become beneficial? "
+        "To analyze this question, consider the participation ratio rho = K / N. "
+        "By Theorem 1, the round detection latency scales as T_delay = (1 / rho) * tau_obs. "
         "For a sequential detector to guide post-drift recovery, detection must occur before a fraction gamma of the post-drift training horizon elapses."
     )
     add_p(
-        "For typical hyperparameters (tau_obs = 11, T - tau = 50, gamma = 0.6), the critical participation threshold is rho* = 11 / (0.6 * 50) = 0.36. "
-        "When rho < 0.36 (rho in {0.05, 0.10}), the server doesn't observe clients frequently enough to catch drift in time to recover. "
-        "Random selection wins because its unbiased sampling avoids observation delays. "
-        "Once participation crosses above 0.36 (rho >= 0.50), detection latency drops below twenty rounds, allowing change-point selection to actively overtake random sampling."
+        "For typical experimental parameters (tau_obs = 11, T - tau = 50, gamma = 0.6), the critical participation threshold is rho* = 11 / (0.6 * 50) = 0.36. "
+        "When rho < rho* (evaluated at rho in {0.05, 0.10}), the coordinator doesn't observe clients frequently enough to catch drift in time to recover. "
+        "Unbiased random sampling wins because it avoids observation delays entirely. "
+        "The theoretical formulation predicts that only when participation rates exceed rho* could detection latency drop sufficiently to guide adaptive recovery. "
+        "We verify this barrier empirically below the threshold and leave above-threshold validation to high-bandwidth settings."
     )
 
-    # Table 6: Empirical Participation Crossover Sweep
+    # Table 6: Empirical Verification of the Barrier
     t6 = doc.add_table(rows=1, cols=6)
     t6.alignment = WD_TABLE_ALIGNMENT.CENTER
     widths6 = [1.3, 1.8, 1.4, 1.4, 0.9, 0.9]
@@ -655,7 +656,7 @@ def build_docx(output_path: str = "paper.docx"):
     p_t6cap.alignment = WD_ALIGN_PARAGRAPH.CENTER
     p_t6cap.paragraph_format.space_before = Pt(2)
     p_t6cap.paragraph_format.space_after = Pt(8)
-    run_t6 = p_t6cap.add_run("Table 6: Empirical participation crossover sweep results on CIFAR-10.")
+    run_t6 = p_t6cap.add_run("Table 6: Empirical verification of the partial observability barrier on CIFAR-10.")
     run_t6.font.name = "Times New Roman"
     run_t6.font.size = Pt(8.5)
     run_t6.font.italic = True

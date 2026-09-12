@@ -65,8 +65,8 @@ $$S_k^- = \max\left(0, S_{k-1}^- - (y_k - \mu_{0, i}) - \kappa\right)$$
 
 where $y_k$ is the $k$-th observation of client $i$'s normalized utility, $\kappa = \frac{\Delta_{\min}}{2}$ is the allowance parameter, and a change is declared when $\max(S_k^+, S_k^-) > h$.
 
-### 3.4 Page-Hinckley (PH) Test (FLEX Baseline)
-As an alternative sequential detector, the Page-Hinckley test maintains a cumulative difference between observed values and the running sample average:
+### 3.4 Page-Hinckley (PH) Test (FLEX-Style Detector-Matched Baseline)
+As an alternative sequential detector, we evaluate a Page-Hinckley test configured as a detector-matched baseline inspired by FLEX [5] (not a complete reimplementation of the full FLEX system):
 
 $$m_k = \sum_{j=1}^k (y_j - \bar{y}_k + \delta), \quad M_k = \max_{1 \le j \le k} m_j$$
 $$\text{PH}_k = M_k - m_k > \lambda$$
@@ -138,7 +138,7 @@ To isolate the contribution of each algorithmic module, we systematically ablate
 | **C2_no_change_bonus** | Exploration | Change Detection Bonus Disabled ($w_c = 0$) | 31.98% | 31.98% | 0.2780 | 100.0% |
 
 > [!NOTE]
-> **Ablation Precision & Remediation**: These ablation runs are single-seed and indicative for sub-1% differences across normalization methods. Condition A1 (32.45%) and B1 (31.98%) reflect different hyperparameter search configurations (A1: 5 warmup rounds, $\epsilon \in [0.08, 0.35]$; B1: 10 warmup rounds, $\epsilon \in [0.05, 0.30]$). A direct remediation test boosting `change_explore_weight` from 0.20 to 1.00 confirms the delay inflation barrier persists: the server still requires sufficient observation opportunities to detect drift initially.
+> **Ablation Precision & Remediation**: These ablation runs are single-seed and indicative for sub-1% differences across normalization methods. Condition A1 (32.45%) and B1 (31.98%) reflect different hyperparameter search configurations (A1: 5 warmup rounds, $\epsilon \in [0.08, 0.35]$; B1: 10 warmup rounds, $\epsilon \in [0.05, 0.30]$). An exploratory remediation boosting change exploration weight to 1.00 showed that the delay inflation barrier persisted qualitatively because initial detection still requires physical observations.
 
 ### 4.4 Phase 14: Robustness Stress-Testing Analysis
 We evaluated the sensitivity of FedQual-CPX against severe non-IID heterogeneity ($\alpha \in \{0.1, 0.5, 1.0\}$) and varying fractions of drifting clients ($\{10\%, 30\%, 50\%\}$):
@@ -158,10 +158,10 @@ We evaluated the sensitivity of FedQual-CPX against severe non-IID heterogeneity
 | | $50\%$ Drifting | Random / FedAvg (B0) | 35.75% | 0.2391 | 100.0% |
 | | $50\%$ Drifting | FedQual-CPX (B8) | 38.16% | 0.2693 | 100.0% |
 
-### 4.5 Phase 15: Participation Crossover Threshold ($\rho = K/N$)
-We investigated the participation ratio threshold $\rho = K / N$ where change-aware client selection transitions from lagging behind random sampling to outperforming it. By Theorem 1, round detection latency scales as $T_{\text{delay}} \ge \frac{N}{K} \tau_{\text{obs}}$. For typical parameters ($\tau_{\text{obs}} \approx 11$, $T - \tau = 50$, $\gamma = 0.6$), the critical threshold is $\rho^* \approx 0.36$. When $\rho < \rho^*$ ($\rho \in \{0.05, 0.10\}$), random sampling outperforms change-aware selection because unbiased sampling avoids observation latency.
+### 4.5 Phase 15: A Predicted Participation Threshold ($\rho = K/N$)
+We analyzed the participation ratio threshold $\rho = K / N$ where change-aware client selection could theoretically overcome observation delay. By Theorem 1, round detection latency scales as $T_{\text{delay}} \ge \frac{N}{K} \tau_{\text{obs}}$. For typical parameters ($\tau_{\text{obs}} \approx 11$, $T - \tau = 50$, $\gamma = 0.6$), the critical predicted threshold is $\rho^* \approx 0.36$. When $\rho < \rho^*$ (empirically evaluated at $\rho \in \{0.05, 0.10\}$), random sampling outperforms change-aware selection because unbiased sampling avoids observation latency entirely. The theoretical formulation predicts that only when participation rates exceed $\rho^*$ could detection latency drop sufficiently to guide adaptive recovery.
 
-*Evaluated on CIFAR-10 ($N=100, T=100$) with 95% bootstrap confidence intervals*:
+*Empirical verification of the partial observability barrier on CIFAR-10 ($N=100, T=100$) with 95% bootstrap confidence intervals*:
 
 | Ratio ($\rho$) | Selection Policy | Final Test Acc (95% CI) | Post-Drift Recovery Acc (95% CI) | Participation Gini ($\downarrow$) | Client Coverage |
 |:---:|---|:---:|:---:|:---:|:---:|
@@ -187,7 +187,7 @@ We investigated the participation ratio threshold $\rho = K / N$ where change-aw
 ![Ablation Breakdown](figures/fig5_ablation_comparison.png)
 
 ### 5.5 EMNIST-ByClass Benchmark Results
-![EMNIST-ByClass Benchmarks](figures/fig7_leaf_benchmarks.png)
+![EMNIST-ByClass Benchmarks](figures/fig7_cross_dataset_benchmarks.png)
 
 ---
 
@@ -367,7 +367,7 @@ FedQual-CPX/
 │   ├── fig4_fairness_gini_comparison.png# Participation Gini bar chart
 │   ├── fig5_ablation_comparison.png  # Ablation condition bar charts
 │   ├── fig6_multi_drift_comparison.png  # Three-drift modality recovery chart
-│   └── fig7_leaf_benchmarks.png      # EMNIST-ByClass cross-dataset benchmark plot
+│   └── fig7_cross_dataset_benchmarks.png # EMNIST-ByClass cross-dataset benchmark plot
 ├── results/                          # Structured experimental results
 │   ├── logs/                         # Detailed training log files
 │   ├── raw/                          # JSON/CSV per-seed metric traces

@@ -479,7 +479,7 @@ def generate_figure7_leaf_benchmarks(tables_dir: Path, output_dir: Path) -> None
     ax2.set_ylim(0.5, 1.45)
 
     plt.tight_layout()
-    fig_path = output_dir / "fig7_leaf_benchmarks.png"
+    fig_path = output_dir / "fig7_cross_dataset_benchmarks.png"
     plt.savefig(fig_path, dpi=300)
     plt.close()
     print(f"[Fig 7] Generated cross-dataset benchmarks figure: {fig_path}")

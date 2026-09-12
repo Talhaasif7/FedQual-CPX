@@ -53,7 +53,7 @@ This paper provides four main contributions:
     \item It proves the Delay Inflation Theorem, showing that detection latency inflates by the inverse participation ratio under partial observability.
     \item It demonstrates across CIFAR-10 and EMNIST-ByClass that uniform random selection outperforms change-aware selection under realistic participation rates.
     \item It reveals the cross-sectional normalization trap, explaining how round-level median scaling masks correlated drift across concurrent clients.
-    \item It identifies the participation crossover threshold where change-point detection transitions from an inert mechanism to an active performance advantage.
+    \item It derives the predicted participation threshold $\rho^* \approx 0.36$ required for sequential detectors to overcome observation latency, empirically verifying the barrier at $\rho \in \{0.05, 0.10\}$ and outlining conditions for future above-threshold validation.
 \end{enumerate}
 
 \section{Related Work}
@@ -261,7 +261,7 @@ On EMNIST-ByClass, random selection again achieves the highest final accuracy ($
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.92\columnwidth]{figures/fig7_leaf_benchmarks.png}
+\includegraphics[width=0.92\columnwidth]{figures/fig7_cross_dataset_benchmarks.png}
 \caption{Evaluation accuracy curves on the EMNIST-ByClass benchmark.}
 \label{fig:femnist_curves}
 \end{figure}
@@ -319,24 +319,24 @@ Drift Fraction 50\% & FedQual-CPX & 38.16\% & 0.2693 & 100.0\% \\
 \end{tabular}
 \end{table}
 
-\section{The Participation Crossover Threshold}
-The negative performance of change-aware selection raises an important question: at what participation ratio does change detection become beneficial?
+\section{A Predicted Participation Threshold}
+The consistent deficit of change-aware selection under realistic participation rates raises a fundamental question: at what participation ratio could sequential change detection theoretically become beneficial?
 
-To answer this question, consider the participation ratio $\rho = K/N$. By Theorem 1, the round detection latency scales as $T_{\text{delay}} \approx \frac{1}{\rho} \tau_{\text{obs}}$. For a sequential detector to guide post-drift recovery, detection must occur before a fraction $\gamma$ of the post-drift training horizon elapses:
+To analyze this question, consider the participation ratio $\rho = K/N$. By Theorem 1, the round detection latency scales as $T_{\text{delay}} \approx \frac{1}{\rho} \tau_{\text{obs}}$. For a sequential detector to guide post-drift recovery, detection must occur before a fraction $\gamma$ of the post-drift training horizon elapses:
 \begin{equation}
 T_{\text{delay}} < \gamma (T - \tau^*) \implies \rho > \frac{\tau_{\text{obs}}}{\gamma (T - \tau^*)}
 \end{equation}
 
-For typical hyperparameters ($\tau_{\text{obs}} \approx 11$, $T - \tau^* = 50$, $\gamma = 0.6$), the critical participation threshold is:
+For typical experimental parameters ($\tau_{\text{obs}} \approx 11$, $T - \tau^* = 50$, $\gamma = 0.6$), the critical participation threshold is:
 \begin{equation}
 \rho^* = \frac{11}{0.6 \times 50} \approx 0.36
 \end{equation}
 
-When $\rho < \rho^*$ ($\rho \in \{0.05, 0.10, 0.25\}$), the server doesn't observe clients frequently enough to catch drift in time to recover. Unbiased random sampling wins because it avoids observation latency entirely. Once participation crosses above $\rho^*$ ($\rho \ge 0.50$), detection latency drops below twenty rounds, allowing change-point selection to actively overtake random sampling.
+When $\rho < \rho^*$ (evaluated at $\rho \in \{0.05, 0.10\}$), the coordinator doesn't observe clients frequently enough to catch drift in time to recover. Unbiased random sampling wins because it avoids observation latency entirely. The theoretical formulation predicts that only when participation rates exceed $\rho^*$ could detection latency drop sufficiently to guide adaptive recovery. We verify this barrier empirically below the threshold and leave above-threshold validation to high-bandwidth settings.
 
 \begin{table}[h]
 \centering
-\caption{Empirical participation crossover sweep results on CIFAR-10.}
+\caption{Empirical verification of the partial observability barrier on CIFAR-10.}
 \label{tab:kn_results}
 \begin{tabular}{llcccc}
 \toprule
