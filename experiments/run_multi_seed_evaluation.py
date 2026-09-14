@@ -50,6 +50,11 @@ METHOD_CONFIGS = {
         "selection": {"method": "fixed_exploration", "epsilon": 0.15, "window_size": 5},
         "normalization": {"method": "none"},
     },
+    "oort": {
+        "description": "Oort (B9, OSDI '21)",
+        "selection": {"method": "oort", "epsilon": 0.20, "c_ucb": 0.5, "window_size": 5},
+        "normalization": {"method": "none"},
+    },
     "fedqual_cpx": {
         "description": "FedQual-CPX (B8 - Proposed)",
         "selection": {
@@ -275,8 +280,8 @@ def run_multi_seed_suite(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--seeds", nargs="+", type=int, default=[42, 43, 44, 45, 46])
-    parser.add_argument("--methods", nargs="+", default=["random", "utility_greedy", "fixed_exploration", "fedqual_cpx"])
+    parser.add_argument("--seeds", nargs="+", type=int, default=list(range(42, 52)))
+    parser.add_argument("--methods", nargs="+", default=["random", "utility_greedy", "fixed_exploration", "oort", "fedqual_cpx"])
     parser.add_argument("--rounds", type=int, default=15)
     parser.add_argument("--clients", type=int, default=20)
     parser.add_argument("--k", type=int, default=5)

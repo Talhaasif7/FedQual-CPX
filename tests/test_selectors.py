@@ -13,6 +13,7 @@ from src.selection.selectors import (
     UtilityGreedySelector,
     SlidingWindowSelector,
     FixedExplorationSelector,
+    OortSelector,
     FedQualCPXSelector,
     create_selector,
 )
@@ -60,6 +61,17 @@ def test_fixed_exploration_selector():
     assert len(set(res.selected_client_ids)) == 4
 
 
+def test_oort_selector():
+    rng = np.random.default_rng(42)
+    history = make_mock_history(10)
+    sel = create_selector("oort", epsilon=0.25, c_ucb=0.5)
+    res = sel.select(6, 10, 4, history, rng)
+    assert len(res.selected_client_ids) == 4
+    assert len(set(res.selected_client_ids)) == 4
+    assert res.epsilon == 0.25
+    assert all(c in res.client_scores for c in res.selected_client_ids)
+
+
 def test_fedqual_cpx_selector():
     rng = np.random.default_rng(42)
     sel = FedQualCPXSelector(warmup_rounds=3, epsilon_min=0.1, epsilon_max=0.4)
@@ -81,5 +93,6 @@ if __name__ == "__main__":
     test_random_selector()
     test_utility_greedy_selector()
     test_fixed_exploration_selector()
+    test_oort_selector()
     test_fedqual_cpx_selector()
     print("All selector unit tests passed!")

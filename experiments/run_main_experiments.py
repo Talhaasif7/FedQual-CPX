@@ -93,6 +93,11 @@ MAIN_METHOD_CONFIGS: dict[str, dict[str, Any]] = {
         },
         "normalization": {"method": "robust_mad", "z_max": 3.0, "epsilon": 1e-8},
     },
+    "oort": {
+        "description": "Oort (B9, OSDI '21)",
+        "selection": {"method": "oort", "epsilon": 0.20, "c_ucb": 0.5, "window_size": 10},
+        "normalization": {"method": "none"},
+    },
 }
 
 
@@ -299,10 +304,21 @@ def run_main_experiments(
     json_path = tables_dir / f"main_experiments_summary_{drift_type}.json"
     csv_path = tables_dir / f"main_experiments_summary_{drift_type}.csv"
 
-    with open(json_path, "w") as f:
+    if json_path.exists() and len(methods) < len(MAIN_METHOD_CONFIGS):
+        try:
+            with open(json_path, "r", encoding="utf-8") as f:
+                existing_rows = json.load(f)
+            merged_dict = {r["method"]: r for r in existing_rows}
+            for r in summary_rows:
+                merged_dict[r["method"]] = r
+            summary_rows = list(merged_dict.values())
+        except Exception as e:
+            print(f"Warning: could not merge with existing summary: {e}")
+
+    with open(json_path, "w", encoding="utf-8") as f:
         json.dump(summary_rows, f, indent=2)
 
-    with open(csv_path, "w", newline="") as f:
+    with open(csv_path, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=list(summary_rows[0].keys()))
         writer.writeheader()
         writer.writerows(summary_rows)
@@ -325,12 +341,26 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Run Phase 12 Main Scale Experiments")
     parser.add_argument("--quick", action="store_true", help="Run fast verification (2 seeds, 20 rounds, N=20)")
     parser.add_argument("--drift-type", type=str, default="class_swap", choices=["class_swap", "feature_shift", "gradual_drift"])
+    parser.add_argument("--methods", nargs="+", default=None, help="Specific methods to run")
+    parser.add_argument("--seeds", nargs="+", type=int, default=None, help="Specific seeds to run")
     args = parser.parse_args()
+
+    default_methods = (
+        "random",
+        "utility_greedy",
+        "sliding_window",
+        "fixed_exploration",
+        "page_hinckley_adaptive",
+        "fedqual_cpx",
+        "oort",
+    )
+    methods = tuple(args.methods) if args.methods else default_methods
+    seeds = tuple(args.seeds) if args.seeds else (42, 43, 44, 45, 46)
 
     if args.quick:
         run_main_experiments(
-            seeds=(42, 43),
-            methods=("random", "utility_greedy", "fixed_exploration", "fedqual_cpx"),
+            seeds=(42, 43) if not args.seeds else tuple(args.seeds),
+            methods=("random", "utility_greedy", "fixed_exploration", "oort", "fedqual_cpx") if not args.methods else tuple(args.methods),
             drift_type=args.drift_type,
             num_rounds=20,
             num_clients=20,
@@ -339,15 +369,8 @@ def main() -> None:
         )
     else:
         run_main_experiments(
-            seeds=(42, 43, 44, 45, 46),
-            methods=(
-                "random",
-                "utility_greedy",
-                "sliding_window",
-                "fixed_exploration",
-                "page_hinckley_adaptive",
-                "fedqual_cpx",
-            ),
+            seeds=seeds,
+            methods=methods,
             drift_type=args.drift_type,
             num_rounds=100,
             num_clients=100,

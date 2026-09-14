@@ -251,7 +251,7 @@ def run_kn_sweep(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run participation crossover sweep.")
-    parser.add_argument("--k-list", type=int, nargs="+", default=[5, 10, 25, 50], help="List of K values")
+    parser.add_argument("--k-list", type=int, nargs="+", default=[5, 10, 25, 36, 50], help="List of K values (e.g. 5, 10, 25, 36, 50 for rho in {0.05, 0.10, 0.25, 0.36, 0.50})")
     parser.add_argument("--seeds", type=int, nargs="+", default=[42, 43, 44], help="Random seeds")
     parser.add_argument("--num-rounds", type=int, default=100, help="Number of FL communication rounds")
     parser.add_argument("--test-every", type=int, default=5, help="Test evaluation frequency")

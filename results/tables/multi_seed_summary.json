@@ -33,6 +33,17 @@
     "coverage_ci_95": "[70.0, 80.0]"
   },
   {
+    "method": "oort",
+    "description": "Oort (B9, OSDI '21)",
+    "num_seeds": 2,
+    "final_acc_mean": 17.89,
+    "final_acc_ci_95": "[13.74, 22.05]",
+    "gini_mean": 0.4334,
+    "gini_ci_95": "[0.4200, 0.4467]",
+    "coverage_mean": 70.0,
+    "coverage_ci_95": "[70.0, 70.0]"
+  },
+  {
     "method": "fedqual_cpx",
     "description": "FedQual-CPX (B8 - Proposed)",
     "num_seeds": 2,

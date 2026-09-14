@@ -172,6 +172,78 @@ class FixedExplorationSelector(BaseSelector):
         )
 
 
+class OortSelector(BaseSelector):
+    """B9: Oort Guided Client Selection (Lai et al., OSDI 2021).
+
+    Selects clients by balancing statistical utility and an Upper Confidence Bound (UCB)
+    exploration bonus:
+        Score_i = u_i + c * sqrt(2 * ln(t) / (N_i + 1))
+    Where (1 - epsilon) of the budget is allocated to high-utility clients,
+    and epsilon is allocated to unexplored/under-explored clients.
+    """
+
+    def __init__(
+        self,
+        epsilon: float = 0.2,
+        c_ucb: float = 0.5,
+        window_size: int = 5,
+    ) -> None:
+        self.epsilon = float(epsilon)
+        self.c_ucb = float(c_ucb)
+        self.window_size = int(window_size)
+
+    def select(
+        self,
+        round_num: int,
+        num_clients: int,
+        clients_per_round: int,
+        client_history: dict[int, dict[str, Any]],
+        rng: np.random.Generator,
+    ) -> SelectionResult:
+        k_exploit = int(math.floor((1.0 - self.epsilon) * clients_per_round))
+        k_exploit = max(1, min(clients_per_round - 1, k_exploit))
+        k_explore = clients_per_round - k_exploit
+
+        t_cur = max(2, round_num)
+        utilities: dict[int, float] = {}
+        ucb_scores: dict[int, float] = {}
+        total_scores: dict[int, float] = {}
+
+        for c in range(num_clients):
+            hist = client_history.get(c, {})
+            utils = [u for u in hist.get("utility", []) if u is not None]
+            recent = utils[-self.window_size:] if utils else []
+            u_c = float(np.mean(recent)) if recent else 0.0
+            utilities[c] = u_c
+
+            n_participations = hist.get("total_participations", 0)
+            bonus = self.c_ucb * math.sqrt(2.0 * math.log(t_cur) / (n_participations + 1))
+            ucb_scores[c] = bonus
+            total_scores[c] = u_c + bonus
+
+        sorted_exploit = sorted(utilities.keys(), key=lambda c: utilities[c], reverse=True)
+        exploit_chosen = sorted_exploit[:k_exploit]
+
+        remaining = [c for c in range(num_clients) if c not in exploit_chosen]
+        sorted_explore = sorted(remaining, key=lambda c: ucb_scores[c], reverse=True)
+        explore_chosen = sorted_explore[:k_explore]
+
+        selected = exploit_chosen + explore_chosen
+
+        return SelectionResult(
+            selected_client_ids=selected,
+            epsilon=self.epsilon,
+            client_scores={
+                c: {
+                    "utility": round(utilities[c], 4),
+                    "ucb_bonus": round(ucb_scores[c], 4),
+                    "total_score": round(total_scores[c], 4),
+                }
+                for c in selected
+            },
+        )
+
+
 class FedQualCPXSelector(BaseSelector):
     """B8: Proposed FedQual-CPX Client Selection (Sections 14-18).
 
@@ -400,5 +472,11 @@ def create_selector(name: str, **kwargs: Any) -> BaseSelector:
     elif name_lower in ("fedqual_cpx", "b8", "fedqual"):
         det_name = kwargs.pop("detector_name", "cusum")
         return FedQualCPXSelector(detector_name=det_name, **kwargs)
+    elif name_lower in ("oort", "b9", "oort_selector"):
+        return OortSelector(
+            epsilon=kwargs.get("epsilon", 0.2),
+            c_ucb=kwargs.get("c_ucb", 0.5),
+            window_size=kwargs.get("window_size", 5),
+        )
     else:
-        raise ValueError(f"Unknown selector '{name}'. Supported: random, greedy, sliding_window, fixed_exploration, fedqual_cpx, page_hinckley_adaptive")
+        raise ValueError(f"Unknown selector '{name}'. Supported: random, greedy, sliding_window, fixed_exploration, oort, fedqual_cpx, page_hinckley_adaptive")

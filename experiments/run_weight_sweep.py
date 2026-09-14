@@ -155,6 +155,12 @@ def run_weight_sweep(
             sum_file = exp_dir / "summary.json"
             metrics_file = exp_dir / "global_metrics.csv"
 
+            if not sum_file.exists() and not guar and abs(w_val - 0.20) < 1e-4:
+                alt_dir = Path("results/raw") / f"main_class_swap_fedqual_cpx_seed{seed}"
+                if (alt_dir / "summary.json").exists():
+                    sum_file = alt_dir / "summary.json"
+                    metrics_file = alt_dir / "global_metrics.csv"
+
             if sum_file.exists():
                 print(f"  [Seed {seed}] Found cached results at {sum_file}, skipping.")
                 with open(sum_file, "r", encoding="utf-8") as f:

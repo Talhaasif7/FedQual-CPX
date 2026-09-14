@@ -46,5 +46,21 @@
     "ttest_stat": -2.3692,
     "ttest_p_value": 0.25426,
     "statistically_significant_05": false
+  },
+  {
+    "method_a": "FedQual-CPX",
+    "method_b": "Oort (B9, OSDI '21)",
+    "n_pairs": 2,
+    "mean_a": 0.3271,
+    "ci_95_a": "[0.3245, 0.3297]",
+    "mean_b": 0.1789,
+    "ci_95_b": "[0.1374, 0.2205]",
+    "mean_difference": 0.1482,
+    "cohens_d": 3.5586,
+    "wilcoxon_stat": 0.0,
+    "wilcoxon_p_value": 0.5,
+    "ttest_stat": 3.8036,
+    "ttest_p_value": 0.16367,
+    "statistically_significant_05": false
   }
 ]
