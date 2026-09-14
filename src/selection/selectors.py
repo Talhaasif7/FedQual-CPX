@@ -223,6 +223,7 @@ class FedQualCPXSelector(BaseSelector):
         self.use_adaptive_epsilon = use_adaptive_epsilon
         self.use_change_bonus = use_change_bonus
         self.change_explore_weight = float(kwargs.pop("change_explore_weight", 0.20))
+        self.guaranteed_change_priority = bool(kwargs.pop("guaranteed_change_priority", False))
 
         # Per-client detector instances
         self.detectors: dict[int, BaseDetector] = {}
@@ -359,7 +360,14 @@ class FedQualCPXSelector(BaseSelector):
         exploit_chosen = sorted_exploit[:k_exploit]
 
         remaining = [c for c in range(num_clients) if c not in exploit_chosen]
-        sorted_explore = sorted(remaining, key=lambda c: explore_scores[c], reverse=True)
+        if self.guaranteed_change_priority:
+            flagged = [c for c in remaining if c in changed_clients]
+            non_flagged = [c for c in remaining if c not in changed_clients]
+            sorted_flagged = sorted(flagged, key=lambda c: explore_scores[c], reverse=True)
+            sorted_non_flagged = sorted(non_flagged, key=lambda c: explore_scores[c], reverse=True)
+            sorted_explore = sorted_flagged + sorted_non_flagged
+        else:
+            sorted_explore = sorted(remaining, key=lambda c: explore_scores[c], reverse=True)
         explore_chosen = sorted_explore[:k_explore]
 
         selected = exploit_chosen + explore_chosen

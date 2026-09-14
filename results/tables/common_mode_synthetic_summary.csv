@@ -1,0 +1,3 @@
+normalization_method,detection_rate_pct,pre_drift_mean,post_drift_mean,shift_detected
+Cross-Sectional (Batch MAD),34.2,0.003,0.005,False
+Temporal (Historical Baseline),99.8,-0.005,-2.662,True

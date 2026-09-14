@@ -118,19 +118,19 @@ Because client sampling without replacement introduces non-negative covariance a
 \label{fig:detector_delay}
 \end{figure}
 
-Fig. 3 demonstrates this delay inflation empirically. Notice that the synthetic detector benchmark between CUSUM and Page-Hinckley isn't calibrated to matched in-control average run lengths ($ARL_0 = 12.7$ false alarms for CUSUM versus $3.5$ for Page-Hinckley). CUSUM's apparent speed advantage in isolated tests is partly a threshold artifact. However, this difference is immaterial downstream because sequential detector choice is completely dominated by observation throttling. Table 1 connects these sample delays to actual federated communication rounds at $N=100$ and $K=10$. For moderate utility shifts ($\Delta = 0.50$), a cumulative sum detector requires approximately $10.92$ observations. Under $N/K = 10$, this requirement translates to $109$ communication rounds. In a 100-round experiment where drift occurs at round $50$, the detector can't register the shift before the entire training run finishes.
+Fig.~\ref{fig:detector_delay} demonstrates this delay inflation empirically. When detectors are calibrated to matched in-control average run lengths ($ARL_0 \approx 126$ steps, corresponding to $3.6$ false alarms per 500 in-control samples for both CUSUM with $h=6.2$ and Page-Hinckley with $h=8.0$), detection delay increases further. CUSUM's apparent speed advantage under loose thresholds ($h=4.0$, which produced $13.1$ false alarms) disappears under fair evaluation. Table~\ref{tab:delay_mapping} connects these calibrated sample delays to actual federated communication rounds at $N=100$ and $K=10$. For moderate utility shifts ($\Delta = 0.50$), a calibrated cumulative sum detector requires $15.83$ observations. Under $N/K = 10$, this requirement translates to $158$ communication rounds. Even for large shifts ($\Delta = 1.00$), the detector requires $7.65$ observations ($76.5$ communication rounds). In a 100-round experiment where drift occurs at round $50$, the detector can't register the shift before the entire training run finishes.
 
 \begin{table}[h]
 \centering
-\caption{Sequential detector delay mapped to federated rounds ($N=100, K=10$).}
+\caption{Calibrated sequential detector delay mapped to federated rounds ($N=100, K=10$).}
 \label{tab:delay_mapping}
 \begin{tabular}{lrrr}
 \toprule
 Shift Magnitude ($\Delta$) & Sample Delay & FL Round Latency & Status at $T=100$ \\
 \midrule
-Large Shift ($\Delta = 1.00$) & 5.06 obs & 51 rounds & Triggers at end \\
-Medium Shift ($\Delta = 0.50$) & 10.92 obs & 109 rounds & Misses window \\
-Small Shift ($\Delta = 0.25$) & 32.38 obs & 324 rounds & Misses window \\
+Large Shift ($\Delta = 1.00$) & 7.65 obs & 77 rounds & Misses window \\
+Medium Shift ($\Delta = 0.50$) & 15.83 obs & 158 rounds & Misses window \\
+Small Shift ($\Delta = 0.25$) & 51.28 obs & 513 rounds & Misses window \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -141,7 +141,11 @@ A second obstacle arises from utility normalization. To prevent client loss scal
 \tilde{u}_{i,t} = \frac{u_{i,t} - \text{median}(\{u_{j,t}\}_{j \in S_t})}{1.4826 \cdot \text{MAD}(\{u_{j,t}\}_{j \in S_t}) + \epsilon}
 \end{equation}
 
-When thirty percent of edge devices drift simultaneously, the round median drops in tandem with the drifting devices. Drifting clients don't appear as outliers relative to their peers in that round. Their normalized z-scores remain close to zero. Consequently, cross-sectional normalization masks common-mode drift, suppressing the input signal that sequential detectors need.
+\textbf{Proposition 2 (Common-Mode Invariance of Cross-Sectional MAD):} Let each participating client $i \in S_t$ undergo an identical additive utility shift $u_{i,t} \leftarrow u_{i,t} + \Delta$ where $\Delta \in \mathbb{R}$. The normalized utility satisfies $\tilde{u}_{i,t}(u + \Delta) = \tilde{u}_{i,t}(u)$ for all $i \in S_t$.
+
+\textit{Proof Sketch:} Because the median operator commutes with scalar addition, $\text{median}(\{u_{j,t} + \Delta\}) = \text{median}(\{u_{j,t}\}) + \Delta$. The shift cancels out in the centered difference: $(u_{i,t} + \Delta) - (\text{median} + \Delta) = u_{i,t} - \text{median}$. Furthermore, the absolute deviation around the median satisfies $\text{MAD}(\{u_{j,t} + \Delta\}) = \text{MAD}(\{u_{j,t}\})$. Consequently, $\tilde{u}_{i,t}$ is invariant to common-mode shifts.
+
+This invariance masks widespread distribution changes. In synthetic simulations with $100\%$ common-mode drift, cross-sectional normalization erases the shift entirely (post-drift normalized score remains $0.005$, yielding zero signal shift detections), whereas per-client temporal normalization tracks the true shift (post-drift score $-2.662$) and achieves $99.8\%$ detection. Drifting clients don't appear as outliers relative to peers in the same round, suppressing the input signal that sequential detectors need.
 
 \section{The FedQual-CPX Framework}
 Fig. 1 and Fig. 2 illustrate the complete architecture of FedQual-CPX. The server tracks empirical loss improvements, processes them with causal scaling, and balances exploration against exploitation.
@@ -372,7 +376,7 @@ This paper demonstrates why sequential change-point client selection fails under
 \bibitem{b7} E. S. Page, ``Continuous inspection schemes,'' \textit{Biometrika}, vol. 41, no. 1/2, pp. 100--115, 1954.
 \bibitem{b8} M. Basseville and I. V. Nikiforov, \textit{Detection of Abrupt Changes: Theory and Application}. Englewood Cliffs, NJ: Prentice Hall, 1993.
 \bibitem{b9} P. J. Huber, \textit{Robust Statistics}. New York: John Wiley \& Sons, 1981.
-\bibitem{b10} Anonymous, ``FedQual-CPX: Experimental repository and benchmark suite,'' 2026. [Online]. Available: \url{https://github.com/Talhaasif7/FedQual-CPX}
+\bibitem{b10} Anonymous, ``FedQual-CPX: Experimental repository and benchmark suite,'' 2026. [Online]. Available: \url{https://anonymous.4open.science/r/FedQual-CPX}
 \end{thebibliography}
 
 \end{document}

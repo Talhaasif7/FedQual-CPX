@@ -332,12 +332,12 @@ def build_docx(output_path: str = "paper.docx"):
 
     add_p(
         "Figure 3 demonstrates this delay inflation empirically. "
-        "Notice that the synthetic detector benchmark between CUSUM and Page-Hinckley isn't calibrated to matched in-control average run lengths (ARL_0 = 12.7 false alarms for CUSUM versus 3.5 for Page-Hinckley). "
-        "CUSUM's apparent speed advantage in isolated tests is partly a threshold artifact. "
-        "However, this difference is immaterial downstream because sequential detector choice is completely dominated by observation throttling. "
-        "Table 1 connects these sample delays to actual federated communication rounds at N=100 and K=10. "
-        "For moderate utility shifts (Delta = 0.50), a cumulative sum detector requires approximately 10.92 observations. "
-        "Under N/K = 10, this requirement translates to 109 communication rounds. "
+        "When detectors are calibrated to matched in-control average run lengths (ARL_0 ≈ 126 steps, corresponding to 3.6 false alarms per 500 in-control samples for both CUSUM with h=6.2 and Page-Hinckley with h=8.0), detection delay increases further. "
+        "CUSUM's apparent speed advantage under loose thresholds (h=4.0, which produced 13.1 false alarms) disappears under fair evaluation. "
+        "Table 1 connects these calibrated sample delays to actual federated communication rounds at N=100 and K=10. "
+        "For moderate utility shifts (Delta = 0.50), a calibrated cumulative sum detector requires 15.83 observations. "
+        "Under N/K = 10, this requirement translates to 158 communication rounds. "
+        "Even for large shifts (Delta = 1.00), the detector requires 7.65 observations (76.5 communication rounds). "
         "In a 100-round experiment where drift occurs at round 50, the detector can't register the shift before the entire training run finishes."
     )
 
@@ -357,15 +357,15 @@ def build_docx(output_path: str = "paper.docx"):
             r.font.color.rgb = RGBColor(255, 255, 255)
             r.font.name = "Times New Roman"
 
-    add_table_row(t1, ["Large Shift (Delta = 1.00)", "5.06 obs", "51 rounds", "Triggers at end"], col_widths=widths1)
-    add_table_row(t1, ["Medium Shift (Delta = 0.50)", "10.92 obs", "109 rounds", "Misses window"], col_widths=widths1)
-    add_table_row(t1, ["Small Shift (Delta = 0.25)", "32.38 obs", "324 rounds", "Misses window"], col_widths=widths1)
+    add_table_row(t1, ["Large Shift (Delta = 1.00)", "7.65 obs", "77 rounds", "Misses window"], col_widths=widths1)
+    add_table_row(t1, ["Medium Shift (Delta = 0.50)", "15.83 obs", "158 rounds", "Misses window"], col_widths=widths1)
+    add_table_row(t1, ["Small Shift (Delta = 0.25)", "51.28 obs", "513 rounds", "Misses window"], col_widths=widths1)
 
     p_t1cap = doc.add_paragraph()
     p_t1cap.alignment = WD_ALIGN_PARAGRAPH.CENTER
     p_t1cap.paragraph_format.space_before = Pt(2)
     p_t1cap.paragraph_format.space_after = Pt(8)
-    run_t1 = p_t1cap.add_run("Table 1: Sequential detector delay mapped to federated rounds (N=100, K=10).")
+    run_t1 = p_t1cap.add_run("Table 1: Calibrated sequential detector delay mapped to federated rounds (N=100, K=10).")
     run_t1.font.name = "Times New Roman"
     run_t1.font.size = Pt(8.5)
     run_t1.font.italic = True
@@ -374,10 +374,9 @@ def build_docx(output_path: str = "paper.docx"):
     add_p(
         "A second obstacle arises from utility normalization. "
         "To prevent client loss scales from skewing selection, systems apply robust z-score normalization using Median Absolute Deviation (MAD). "
-        "When normalization operates across contemporaneous clients in round t, drifting clients don't appear as outliers relative to their peers. "
-        "When thirty percent of edge devices drift simultaneously, the round median drops in tandem with the drifting devices. "
-        "Their normalized z-scores remain close to zero. "
-        "Consequently, cross-sectional normalization masks common-mode drift, suppressing the input signal that sequential detectors need."
+        "Proposition 2 (Common-Mode Invariance of Cross-Sectional MAD): Let each participating client i in S_t undergo an identical additive utility shift u_{i,t} <- u_{i,t} + Delta where Delta is a scalar. The normalized utility satisfies u_tilde_{i,t}(u + Delta) = u_tilde_{i,t}(u) for all i in S_t. "
+        "Proof Sketch: Because the median operator commutes with scalar addition, median({u_{j,t} + Delta}) = median({u_{j,t}}) + Delta. The shift cancels out in the centered difference: (u_{i,t} + Delta) - (median + Delta) = u_{i,t} - median. Furthermore, absolute deviation around the median satisfies MAD({u_{j,t} + Delta}) = MAD({u_{j,t}}). Consequently, u_tilde_{i,t} is invariant to common-mode shifts. "
+        "In synthetic simulations with 100% common-mode drift, cross-sectional normalization erases the shift entirely (post-drift normalized score remains 0.005, yielding zero signal shift detections), whereas per-client temporal normalization tracks the true shift (post-drift score -2.662) and achieves 99.8% detection. Drifting clients don't appear as outliers relative to peers in the same round, suppressing the input signal that sequential detectors need."
     )
 
     # 5. Experimental Evaluation
@@ -692,7 +691,7 @@ def build_docx(output_path: str = "paper.docx"):
         "This paper demonstrates why sequential change-point client selection fails under realistic federated learning constraints. "
         "Under partial observability, detection delay inflates by the inverse participation ratio, preventing detectors from reacting to drift before training ends. "
         "Furthermore, cross-sectional normalization erases common-mode drift across edge clients. "
-        "Uniform random selection consistently outperforms change-aware selection across CIFAR-10 and FEMNIST benchmarks while guaranteeing full client coverage. "
+        "Uniform random selection consistently outperforms change-aware selection across CIFAR-10 and EMNIST-ByClass benchmarks while guaranteeing full client coverage. "
         "Future work should focus on server-side global loss divergence indicators rather than local sequential client tracking."
     )
 
@@ -708,7 +707,7 @@ def build_docx(output_path: str = "paper.docx"):
         "[7] E. S. Page, \"Continuous inspection schemes,\" Biometrika, vol. 41, no. 1/2, pp. 100-115, 1954.",
         "[8] M. Basseville and I. V. Nikiforov, Detection of Abrupt Changes: Theory and Application. Englewood Cliffs, NJ: Prentice Hall, 1993.",
         "[9] P. J. Huber, Robust Statistics. New York: John Wiley & Sons, 1981.",
-        "[10] Anonymous, \"FedQual-CPX: Experimental repository and benchmark suite,\" 2026. [Online]. Available: https://github.com/Talhaasif7/FedQual-CPX",
+        "[10] Anonymous, \"FedQual-CPX: Experimental repository and benchmark suite,\" 2026. [Online]. Available: https://anonymous.4open.science/r/FedQual-CPX",
     ]
 
     for ref in refs:

@@ -1,0 +1,219 @@
+{
+  "calibration_info": {
+    "page_hinckley": {
+      "uncalibrated_h": 8.0,
+      "calibrated_h": 8.0,
+      "params": {
+        "delta": 0.15,
+        "h": 8.0,
+        "cooldown": 5
+      },
+      "in_control_fa": 3.71,
+      "arl0": 125.16
+    },
+    "cusum": {
+      "uncalibrated_h": 4.0,
+      "calibrated_h": 6.2,
+      "params": {
+        "delta": 0.25,
+        "h": 6.2,
+        "cooldown": 5
+      },
+      "in_control_fa": 3.64,
+      "arl0": 126.83
+    },
+    "ewma": {
+      "uncalibrated_h": 3.0,
+      "calibrated_h": 2.5,
+      "params": {
+        "lambd": 0.2,
+        "l_sigma": 2.5,
+        "cooldown": 5
+      },
+      "in_control_fa": 3.63,
+      "arl0": 125.58
+    }
+  },
+  "benchmark_results": [
+    {
+      "regime": "uncalibrated",
+      "detector": "cusum",
+      "delta": 0.25,
+      "mean_sample_delay": 30.12,
+      "std_sample_delay": 28.13,
+      "fl_latency_rounds_k10": 301.2,
+      "false_alarms_per_trial": 13.11,
+      "miss_rate": 0.0
+    },
+    {
+      "regime": "uncalibrated",
+      "detector": "page_hinckley",
+      "delta": 0.25,
+      "mean_sample_delay": 43.66,
+      "std_sample_delay": 35.19,
+      "fl_latency_rounds_k10": 436.6,
+      "false_alarms_per_trial": 3.82,
+      "miss_rate": 0.0
+    },
+    {
+      "regime": "uncalibrated",
+      "detector": "ewma",
+      "delta": 0.25,
+      "mean_sample_delay": 145.38,
+      "std_sample_delay": 122.03,
+      "fl_latency_rounds_k10": 1453.8,
+      "false_alarms_per_trial": 0.89,
+      "miss_rate": 0.04
+    },
+    {
+      "regime": "calibrated",
+      "detector": "cusum",
+      "delta": 0.25,
+      "mean_sample_delay": 51.28,
+      "std_sample_delay": 42.06,
+      "fl_latency_rounds_k10": 512.8,
+      "false_alarms_per_trial": 3.55,
+      "miss_rate": 0.0
+    },
+    {
+      "regime": "calibrated",
+      "detector": "page_hinckley",
+      "delta": 0.25,
+      "mean_sample_delay": 43.66,
+      "std_sample_delay": 35.19,
+      "fl_latency_rounds_k10": 436.6,
+      "false_alarms_per_trial": 3.82,
+      "miss_rate": 0.0
+    },
+    {
+      "regime": "calibrated",
+      "detector": "ewma",
+      "delta": 0.25,
+      "mean_sample_delay": 59.47,
+      "std_sample_delay": 54.39,
+      "fl_latency_rounds_k10": 594.7,
+      "false_alarms_per_trial": 3.76,
+      "miss_rate": 0.0
+    },
+    {
+      "regime": "uncalibrated",
+      "detector": "cusum",
+      "delta": 0.5,
+      "mean_sample_delay": 10.61,
+      "std_sample_delay": 6.85,
+      "fl_latency_rounds_k10": 106.1,
+      "false_alarms_per_trial": 13.21,
+      "miss_rate": 0.0
+    },
+    {
+      "regime": "uncalibrated",
+      "detector": "page_hinckley",
+      "delta": 0.5,
+      "mean_sample_delay": 16.41,
+      "std_sample_delay": 7.85,
+      "fl_latency_rounds_k10": 164.1,
+      "false_alarms_per_trial": 3.74,
+      "miss_rate": 0.0
+    },
+    {
+      "regime": "uncalibrated",
+      "detector": "ewma",
+      "delta": 0.5,
+      "mean_sample_delay": 42.35,
+      "std_sample_delay": 37.65,
+      "fl_latency_rounds_k10": 423.5,
+      "false_alarms_per_trial": 1.01,
+      "miss_rate": 0.0
+    },
+    {
+      "regime": "calibrated",
+      "detector": "cusum",
+      "delta": 0.5,
+      "mean_sample_delay": 15.83,
+      "std_sample_delay": 8.69,
+      "fl_latency_rounds_k10": 158.3,
+      "false_alarms_per_trial": 3.78,
+      "miss_rate": 0.0
+    },
+    {
+      "regime": "calibrated",
+      "detector": "page_hinckley",
+      "delta": 0.5,
+      "mean_sample_delay": 16.41,
+      "std_sample_delay": 7.85,
+      "fl_latency_rounds_k10": 164.1,
+      "false_alarms_per_trial": 3.74,
+      "miss_rate": 0.0
+    },
+    {
+      "regime": "calibrated",
+      "detector": "ewma",
+      "delta": 0.5,
+      "mean_sample_delay": 20.37,
+      "std_sample_delay": 17.81,
+      "fl_latency_rounds_k10": 203.7,
+      "false_alarms_per_trial": 3.78,
+      "miss_rate": 0.0
+    },
+    {
+      "regime": "uncalibrated",
+      "detector": "cusum",
+      "delta": 1.0,
+      "mean_sample_delay": 4.82,
+      "std_sample_delay": 3.18,
+      "fl_latency_rounds_k10": 48.2,
+      "false_alarms_per_trial": 12.79,
+      "miss_rate": 0.0
+    },
+    {
+      "regime": "uncalibrated",
+      "detector": "page_hinckley",
+      "delta": 1.0,
+      "mean_sample_delay": 8.2,
+      "std_sample_delay": 4.26,
+      "fl_latency_rounds_k10": 82.0,
+      "false_alarms_per_trial": 3.54,
+      "miss_rate": 0.0
+    },
+    {
+      "regime": "uncalibrated",
+      "detector": "ewma",
+      "delta": 1.0,
+      "mean_sample_delay": 10.45,
+      "std_sample_delay": 6.41,
+      "fl_latency_rounds_k10": 104.5,
+      "false_alarms_per_trial": 0.87,
+      "miss_rate": 0.0
+    },
+    {
+      "regime": "calibrated",
+      "detector": "cusum",
+      "delta": 1.0,
+      "mean_sample_delay": 7.65,
+      "std_sample_delay": 4.14,
+      "fl_latency_rounds_k10": 76.5,
+      "false_alarms_per_trial": 3.44,
+      "miss_rate": 0.0
+    },
+    {
+      "regime": "calibrated",
+      "detector": "page_hinckley",
+      "delta": 1.0,
+      "mean_sample_delay": 8.2,
+      "std_sample_delay": 4.26,
+      "fl_latency_rounds_k10": 82.0,
+      "false_alarms_per_trial": 3.54,
+      "miss_rate": 0.0
+    },
+    {
+      "regime": "calibrated",
+      "detector": "ewma",
+      "delta": 1.0,
+      "mean_sample_delay": 7.39,
+      "std_sample_delay": 4.99,
+      "fl_latency_rounds_k10": 73.9,
+      "false_alarms_per_trial": 3.5,
+      "miss_rate": 0.0
+    }
+  ]
+}
