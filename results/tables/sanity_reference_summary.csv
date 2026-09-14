@@ -1,0 +1,2 @@
+condition,method,num_rounds,num_seeds,final_acc_mean,final_acc_ci_95,best_acc_mean,best_acc_ci_95,gini_mean,coverage_mean
+"CIFAR-10 Near-IID (alpha=100.0, No Drift)",Random / FedAvg,100,3,45.82,"[45.49, 46.19]",45.82,"[45.49, 46.19]",0.1705,100.0
