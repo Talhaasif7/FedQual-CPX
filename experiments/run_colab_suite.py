@@ -137,7 +137,15 @@ def main() -> None:
         choices=["all", "main", "threshold", "weights", "multiseed"],
         help="Which benchmark task to execute.",
     )
+    parser.add_argument(
+        "--all",
+        action="store_true",
+        help="Run all tasks (shortcut for --task all).",
+    )
     args = parser.parse_args()
+
+    if args.all:
+        args.task = "all"
 
     check_gpu()
     prepare_data()
