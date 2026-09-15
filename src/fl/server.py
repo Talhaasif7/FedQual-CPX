@@ -151,11 +151,15 @@ class FederatedServer:
         """
         selected_ids = {r.client_id for r in client_results}
 
-        # Normalize contemporaneous utilities (Section 10)
+        # Normalize utilities (contemporaneous batch or per-client temporal)
         if client_results:
-            raw_utils = [r.utility_loss_gain for r in client_results]
-            norm_utils = self.normalizer.normalize_batch(raw_utils)
-            norm_map = {r.client_id: float(norm_utils[idx]) for idx, r in enumerate(client_results)}
+            if hasattr(self.normalizer, "normalize_client_batch"):
+                raw_dict = {r.client_id: r.utility_loss_gain for r in client_results}
+                norm_map = self.normalizer.normalize_client_batch(raw_dict)
+            else:
+                raw_utils = [r.utility_loss_gain for r in client_results]
+                norm_utils = self.normalizer.normalize_batch(raw_utils)
+                norm_map = {r.client_id: float(norm_utils[idx]) for idx, r in enumerate(client_results)}
         else:
             norm_map = {}
 

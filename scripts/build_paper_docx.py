@@ -489,22 +489,24 @@ def build_docx(output_path: str = "paper.docx"):
         "In contrast, FedQual-CPX preserves full client coverage (100%) and reduces the Gini coefficient to 0.4846."
     )
 
-    add_h2("5.3 Multi-Seed Statistical Hypothesis Testing")
+    add_h2("5.3 Statistical Significance and Hypothesis Testing")
     add_p(
-        "To provide rigorous statistical validation beyond five seeds and address small-sample reviewer concerns, we expanded evaluation across ten independent deterministic seeds ([42, 43, 44, 45, 46, 47, 48, 49, 50, 51]) on paired non-stationary client configurations (N=20, K=5, T=15, tau=8). "
-        "Paired non-parametric Wilcoxon signed-rank tests and paired t-tests were conducted against all baselines:"
+        "To rigorously assess the performance differences across the 100-round benchmark (N=100, K=10, T=100, tau=50), we conducted paired non-parametric Wilcoxon signed-rank tests and paired Student's t-tests across the five deterministic seeds ([42, 43, 44, 45, 46]) against FedQual-CPX:"
     )
     add_bullet(
-        "FedQual-CPX vs. Utility Greedy (B2): A statistically significant difference is established (p = 0.0039, Wilcoxon W = 1.0; paired t = -4.27, p = 0.0021, Cohen's d = -1.87). Greedy utility exploitation produces higher model accuracy (38.71% vs. 33.22%) but incurs severe client starvation (G = 0.7489, coverage 26.0%)."
+        "FedQual-CPX vs. Random (B0): Mean accuracy difference is -3.56% (33.24% vs. 36.80%, Cohen's d = -1.16, Wilcoxon W = 2.0, p = 0.1875). Uniform random selection achieves higher recovery accuracy because unbiased sampling avoids observation latency entirely."
     )
     add_bullet(
-        "FedQual-CPX vs. Oort (B9): FedQual-CPX demonstrates a +2.55% mean accuracy advantage over Oort (33.22% [31.79, 34.57] vs. 30.67% [25.58, 34.26], Cohen's d = 0.478, Wilcoxon W = 21.0, p = 0.5566), while maintaining substantially lower participation inequality (G = 0.2257 vs. 0.4712) and full client coverage (100% vs. 90%)."
+        "FedQual-CPX vs. Utility Greedy (B2): Mean accuracy difference is -5.11% (33.24% vs. 38.35%, Cohen's d = -2.00, paired t = -2.73, p = 0.0525, Wilcoxon W = 1.0, p = 0.1250). Concurrently, FedQual-CPX achieves a massive, highly significant reduction in participation Gini inequality (-0.4130, 0.4846 vs. 0.8976, paired t = -25.40, p = 1.0e-5, Cohen's d = -14.91)."
     )
     add_bullet(
-        "FedQual-CPX vs. Random (B0): The mean difference across 10 seeds is negligible at -0.86% (33.22% vs. 34.08%, Cohen's d = -0.255, Wilcoxon W = 19.0, p = 0.4316), confirming that adaptive selection cannot statistically outperform uniform random under partial observability."
+        "FedQual-CPX vs. Oort (B9): Mean accuracy difference is -1.26% (33.24% vs. 34.50%, Cohen's d = -0.38, Wilcoxon W = 6.0, p = 0.6250). While Oort incorporates UCB exploration, it still exhibits substantial participation inequality (G = 0.6514 vs. 0.4846, paired t = -12.14, p = 0.0003, Cohen's d = -5.43)."
     )
     add_bullet(
-        "FedQual-CPX vs. Fixed Exploration (B4): Performance remains statistically indistinguishable (mean difference -0.81%, p = 0.6250, Cohen's d = -0.300)."
+        "FedQual-CPX vs. Page-Hinckley Adaptive (B6): Produces an exact empirical identity across all five random seeds (Delta = 0.0000%, Cohen's d = 0.00, p = 1.0000), directly proving that the detector algorithm is inert under partial observability."
+    )
+    add_p(
+        "With n=5 paired seeds, the mathematical lower bound for two-sided Wilcoxon p-values is 2^(-4) = 0.0625, meaning conventional significance (p < 0.05) is structurally unreachable non-parametrically at this sample size; extending to n=10 paired seeds is evaluated to confirm statistical resolution."
     )
 
     add_h2("5.4 EMNIST-ByClass Benchmark")

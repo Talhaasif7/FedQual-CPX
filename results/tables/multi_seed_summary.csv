@@ -1,6 +1,0 @@
-method,description,num_seeds,final_acc_mean,final_acc_ci_95,gini_mean,gini_ci_95,coverage_mean,coverage_ci_95
-random,Random / FedAvg (B0),10,34.08,"[31.24, 36.09]",0.2338,"[0.2116, 0.2546]",98.5,"[97.0, 100.0]"
-utility_greedy,Utility Greedy (B2),10,38.71,"[36.47, 40.50]",0.7489,"[0.7475, 0.7500]",26.0,"[25.0, 27.5]"
-fixed_exploration,"Fixed Exploration (B4, eps=0.15)",10,34.04,"[32.21, 35.79]",0.5928,"[0.5784, 0.6075]",70.5,"[67.0, 73.5]"
-oort,"Oort (B9, OSDI '21)",10,30.67,"[25.58, 34.26]",0.4712,"[0.4477, 0.4931]",90.0,"[82.5, 95.0]"
-fedqual_cpx,FedQual-CPX (B8 - Proposed),10,33.22,"[31.79, 34.57]",0.2257,"[0.2121, 0.2384]",100.0,"[100.0, 100.0]"

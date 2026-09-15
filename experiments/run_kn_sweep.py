@@ -127,6 +127,9 @@ def run_kn_sweep(
     if seeds is None:
         seeds = [42, 43, 44]
 
+    if num_rounds < 50:
+        raise ValueError(f"Safety Guard: Refusing to run sweep with num_rounds={num_rounds} (< 50).")
+
     output_path = Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
 
@@ -159,28 +162,35 @@ def run_kn_sweep(
                         sum_file = alt_file
                         exp_dir = Path("results/raw") / f"main_class_swap_{method_key}_seed{seed}"
 
-                # Check if already completed
+                # Check if already completed and valid
                 if sum_file.exists():
-                    print(f"Found existing results for {sum_file}, loading cached summary.")
                     with open(sum_file, "r", encoding="utf-8") as f:
                         summary = json.load(f)
-                    final_acc = summary["final_accuracy"]
-                    best_acc = summary["best_accuracy"]
-                    fairness = summary["participation"]
-                    gini = fairness.get("gini", 0.0)
-                    cov = fairness.get("coverage", 0.0)
+                    if summary.get("total_rounds", 0) >= 50:
+                        print(f"Found existing results for {sum_file}, loading cached summary.")
+                        final_acc = summary["final_accuracy"]
+                        best_acc = summary["best_accuracy"]
+                        fairness = summary["participation"]
+                        gini = fairness.get("gini", 0.0)
+                        cov = fairness.get("coverage", 0.0)
 
-                    # Try to extract recovery acc from global_metrics.csv
-                    gm_file = exp_dir / "global_metrics.csv"
-                    if gm_file.exists():
-                        with open(gm_file, "r", encoding="utf-8") as gf:
-                            rows = list(csv.DictReader(gf))
-                        drift_r = num_rounds // 2
-                        post = [float(r["test_accuracy"]) for r in rows if r.get("test_accuracy") != "" and int(r["round"]) >= drift_r]
-                        recovery_acc = float(np.mean(post)) if post else final_acc
+                        # Try to extract recovery acc from global_metrics.csv
+                        gm_file = exp_dir / "global_metrics.csv"
+                        if gm_file.exists():
+                            with open(gm_file, "r", encoding="utf-8") as gf:
+                                rows = list(csv.DictReader(gf))
+                            drift_r = num_rounds // 2
+                            post = [float(r["test_accuracy"]) for r in rows if r.get("test_accuracy") != "" and int(r["round"]) >= drift_r]
+                            recovery_acc = float(np.mean(post)) if post else final_acc
+                        else:
+                            recovery_acc = final_acc
                     else:
-                        recovery_acc = final_acc
+                        print(f"Warning: cached {sum_file} has {summary.get('total_rounds', 0)} rounds (< 50). Rerunning fresh.")
+                        summary = None
                 else:
+                    summary = None
+
+                if summary is None:
                     cfg = build_kn_config(k_val, method_key, num_rounds=num_rounds, seed=seed, test_every=test_every)
                     sim = FederatedSimulator(cfg, experiment_id=exp_id)
                     summary = sim.run()
@@ -226,12 +236,22 @@ def run_kn_sweep(
                 "coverage_mean": round(c_mean, 1),
                 "num_seeds": len(seeds),
             })
-
             print(f"==> K={k_val}, Method={method_key}: Final Acc={f_mean:.2f}% [{f_ci_l:.2f}, {f_ci_h:.2f}], Recovery={r_mean:.2f}% [{r_ci_l:.2f}, {r_ci_h:.2f}], Gini={g_mean:.4f}, Cov={c_mean:.1f}%")
 
-    # Save to CSV and JSON
+    # Save to CSV and JSON (merge with existing if partial sweep)
     csv_path = output_path / "kn_sweep_summary.csv"
     json_path = output_path / "kn_sweep_summary.json"
+
+    if json_path.exists():
+        try:
+            with open(json_path, "r", encoding="utf-8") as f:
+                existing_rows = json.load(f)
+            merged = {(r["k"], r["method"]): r for r in existing_rows}
+            for r in summary_rows:
+                merged[(r["k"], r["method"])] = r
+            summary_rows = sorted(list(merged.values()), key=lambda x: (x["k"], x["method"]))
+        except Exception as e:
+            print(f"Warning: could not merge sweep tables: {e}")
 
     with open(csv_path, "w", newline="", encoding="utf-8") as f:
         fieldnames = [

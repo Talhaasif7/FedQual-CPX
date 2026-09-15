@@ -148,20 +148,58 @@ class IdentityNormalizer:
         return float(value)
 
 
+class TemporalNormalizer:
+    """Per-client temporal normalizer for client utilities.
+
+    Normalizes client utility relative to each client's historical baseline observations.
+    Preserves common-mode temporal shifts that cross-sectional batch normalization erases.
+    """
+
+    def __init__(self, z_max: float = 3.0, epsilon: float = 1e-8) -> None:
+        self.z_max = float(z_max)
+        self.epsilon = float(epsilon)
+        self.client_history: dict[int, list[float]] = {}
+
+    def normalize_client_batch(self, client_utilities: dict[int, float]) -> dict[int, float]:
+        """Normalize a dict of {client_id: raw_utility} against each client's historical distribution."""
+        norm_map = {}
+        for c_id, val in client_utilities.items():
+            hist = self.client_history.setdefault(c_id, [])
+            if len(hist) < 2:
+                z = 0.0
+            else:
+                med = float(np.median(hist))
+                abs_diff = np.abs(np.array(hist) - med)
+                mad = float(np.median(abs_diff))
+                scale = 1.4826 * mad + self.epsilon
+                z = (val - med) / scale
+            norm_map[c_id] = float(np.clip(z, -self.z_max, self.z_max))
+            hist.append(val)
+        return norm_map
+
+    def normalize_batch(self, utilities: list[float] | np.ndarray) -> np.ndarray:
+        return np.asarray(utilities, dtype=np.float64)
+
+    def normalize_single(self, value: float, reference_utilities: list[float] | np.ndarray) -> float:
+        return float(value)
+
+
 def create_normalizer(
     method: str = "robust_mad",
     z_max: float = 3.0,
     epsilon: float = 1e-8,
-) -> RobustNormalizer | ZScoreNormalizer | MinMaxNormalizer | IdentityNormalizer:
+) -> RobustNormalizer | ZScoreNormalizer | MinMaxNormalizer | IdentityNormalizer | TemporalNormalizer:
     """Factory function for normalizers."""
     method_lower = method.lower()
     if method_lower in ("none", "identity", "raw"):
         return IdentityNormalizer()
     elif method_lower in ("robust_mad", "mad"):
         return RobustNormalizer(z_max=z_max, epsilon=epsilon)
+    elif method_lower in ("temporal", "per_client_temporal"):
+        return TemporalNormalizer(z_max=z_max, epsilon=epsilon)
     elif method_lower in ("zscore", "z_score", "standard"):
         return ZScoreNormalizer(z_max=z_max, epsilon=epsilon)
     elif method_lower in ("minmax", "min_max"):
         return MinMaxNormalizer(epsilon=epsilon)
     else:
-        raise ValueError(f"Unknown normalization method: '{method}'. Choose 'robust_mad', 'zscore', 'minmax', or 'none'.")
+        raise ValueError(f"Unknown normalization method: '{method}'. Choose 'robust_mad', 'temporal', 'zscore', 'minmax', or 'none'.")

@@ -191,6 +191,13 @@ def run_main_experiments(
     actual_drift_round = int(round(num_rounds * 0.3)) if is_gradual else drift_round
     actual_drift_end = int(round(num_rounds * 0.7)) if is_gradual else (drift_round + 20)
 
+    if num_rounds < 50 or actual_drift_round >= num_rounds:
+        raise ValueError(
+            f"Safety Guard: Refusing to run main experiments with num_rounds={num_rounds} (< 50) "
+            f"or drift_round={actual_drift_round} (>= {num_rounds}). "
+            f"Main scale experiments require T >= 50 and tau < T to prevent pilot run contamination."
+        )
+
     print("=" * 80)
     print(f"FedQual-CPX Phase 12: Main Scale Multi-Seed Experiment Suite")
     print(f"Drift Type: {drift_type} | Seeds: {list(seeds)}")
@@ -210,12 +217,19 @@ def run_main_experiments(
             eval_history: list[dict[str, Any]] = []
 
             if (exp_dir / "summary.json").exists() and (exp_dir / "global_metrics.csv").exists():
-                print(f"  -> Found cached results for {exp_id}, loading...")
                 with open(exp_dir / "summary.json", "r", encoding="utf-8") as f:
                     summary = json.load(f)
-                with open(exp_dir / "global_metrics.csv", "r", encoding="utf-8") as f:
-                    eval_history = list(csv.DictReader(f))
+                if summary.get("total_rounds", 0) >= 50:
+                    print(f"  -> Found cached results for {exp_id}, loading...")
+                    with open(exp_dir / "global_metrics.csv", "r", encoding="utf-8") as f:
+                        eval_history = list(csv.DictReader(f))
+                else:
+                    print(f"  -> Warning: Cached {exp_id} has only {summary.get('total_rounds', 0)} rounds (< 50). Rerunning fresh...")
+                    summary = None
             else:
+                summary = None
+
+            if summary is None:
                 cfg = build_main_config(
                     method_key=method,
                     seed=seed,
