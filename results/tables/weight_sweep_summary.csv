@@ -1,2 +1,7 @@
 condition,change_weight,guaranteed_priority,num_seeds,final_acc_mean,final_acc_ci,recovery_acc_mean,recovery_acc_ci,gini_mean,coverage_mean
 w_change=0.20,0.2,False,5,33.24,"[31.66, 34.88]",25.64,"[23.98, 27.11]",0.4846,100.0
+w_change=0.50,0.5,False,5,33.03,"[30.69, 36.05]",25.52,"[24.37, 26.31]",0.5848,100.0
+w_change=1.00,1.0,False,5,31.9,"[27.68, 35.70]",25.65,"[24.00, 28.24]",0.6141,100.0
+w_change=2.00,2.0,False,5,31.9,"[27.68, 35.70]",25.65,"[24.00, 28.24]",0.6141,100.0
+w_change=5.00,5.0,False,5,31.9,"[27.68, 35.70]",25.65,"[24.00, 28.24]",0.6141,100.0
+Guaranteed Priority,1.0,True,5,31.9,"[27.68, 35.70]",25.65,"[24.00, 28.24]",0.6141,100.0

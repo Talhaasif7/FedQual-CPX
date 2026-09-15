@@ -93,7 +93,7 @@
     "recovery_acc_mean": 25.75,
     "recovery_acc_ci_95": "[24.23, 27.47]",
     "gini_mean": 0.6514,
-    "gini_ci_95": "[0.6280, 0.6690]",
+    "gini_ci_95": "[0.6371, 0.6653]",
     "coverage_mean": 100.0,
     "coverage_ci_95": "[100.0, 100.0]"
   }
