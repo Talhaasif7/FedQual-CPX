@@ -109,7 +109,12 @@ class DriftManager:
         self.rng = np.random.default_rng(seed)
 
         if isinstance(config, dict):
-            self.cfg = DriftConfig(**config)
+            cfg_dict = dict(config)
+            if "drift_client_fraction" in cfg_dict and "drift_fraction" not in cfg_dict:
+                cfg_dict["drift_fraction"] = cfg_dict.pop("drift_client_fraction")
+            valid_fields = {f.name for f in DriftConfig.__dataclass_fields__.values()}
+            filtered = {k: v for k, v in cfg_dict.items() if k in valid_fields}
+            self.cfg = DriftConfig(**filtered)
         elif config is None:
             self.cfg = DriftConfig(enabled=False)
         else:

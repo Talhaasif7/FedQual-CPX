@@ -79,7 +79,7 @@ def build_norm_config(
             "drift_round": drift_round,
             "drift_end_round": drift_round + 20,
             "severity": "medium",
-            "drift_client_fraction": 0.30,
+            "drift_fraction": 0.30,
         },
         "model": {
             "name": "SmallCNN",
