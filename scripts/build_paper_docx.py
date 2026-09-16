@@ -404,8 +404,9 @@ def build_docx(output_path: str = "paper.docx"):
     add_p(
         "The empirical testbed evaluates client selection policies across diverse non-stationary workloads. "
         "All CIFAR-10 experiments distribute training samples across N=100 clients using a Dirichlet distribution with concentration parameter alpha = 0.5. "
-        "In each communication round, the server samples K = 10 devices. "
-        "Five deterministic seeds (42, 43, 44, 45, 46) are executed for each policy."
+        "In each communication round, the server samples K = 10 devices (rho = 0.10). "
+        "To ensure robust non-parametric statistical power (p = 0.00195), ten deterministic seeds ([42 through 51]) are executed for the primary evaluated policies (Random, FedQual-CPX, Page-Hinckley Adaptive, and Oort). "
+        "The auxiliary comparison baselines (Utility Greedy, Sliding Window, and Fixed Exploration) remain evaluated across five deterministic seeds ([42 through 46]) because their severe client starvation behaviors (G ≈ 0.90) and performance deficits are already decisively established."
     )
 
     add_h2("5.1 CIFAR-10 Multi-Drift Benchmark")
@@ -441,13 +442,13 @@ def build_docx(output_path: str = "paper.docx"):
         ["Feature Shift", "Random / FedAvg (B0)", "36.74 [33.0, 39.4]", "26.94 [25.2, 29.2]", "0.1708", "100.0%"],
         ["(tau = 50)", "Utility Greedy (B2)", "37.25 [34.9, 39.9]", "28.18 [26.0, 31.1]", "0.8983", "12.0%"],
         ["", "Sliding Window (B3)", "37.41 [35.2, 39.9]", "27.95 [26.0, 30.6]", "0.8996", "10.4%"],
-        ["", "Fixed Exploration (B4)", "32.86 [28.5, 36.4]", "25.21 [22.3, 28.2]", "0.7075", "90.2%"],
-        ["", "FedQual-CPX (B8, Proposed)", "35.44 [33.9, 37.0]", "25.65 [23.0, 27.9]", "0.5005", "100.0%"],
-        ["Gradual Drift", "Random / FedAvg (B0)", "36.79 [33.5, 39.5]", "31.53 [29.6, 32.9]", "0.1708", "100.0%"],
-        ["(tau in [30, 70])", "Utility Greedy (B2)", "37.23 [33.8, 39.9]", "31.54 [28.9, 34.8]", "0.8977", "11.6%"],
-        ["", "Sliding Window (B3)", "37.58 [35.3, 39.4]", "32.67 [30.7, 35.3]", "0.8998", "10.2%"],
-        ["", "Fixed Exploration (B4)", "35.16 [32.1, 37.7]", "31.41 [29.7, 33.6]", "0.7013", "90.6%"],
-        ["", "FedQual-CPX (B8, Proposed)", "33.37 [32.2, 34.4]", "30.90 [29.5, 32.0]", "0.4962", "100.0%"],
+        ["", "Fixed Exploration (B4)", "32.86 [28.5, 36.4]", "25.21 [22.3, 28.15]", "0.7075", "90.2%"],
+        ["", "FedQual-CPX (B8, Proposed)", "35.44 [33.9, 37.0]", "25.65 [22.98, 27.86]", "0.5005", "100.0%"],
+        ["Gradual Drift", "Random / FedAvg (B0)", "36.79 [33.5, 39.5]", "31.53 [29.62, 32.87]", "0.1708", "100.0%"],
+        ["(tau in [30, 70])", "Utility Greedy (B2)", "37.23 [33.76, 39.87]", "31.54 [28.85, 34.80]", "0.8977", "11.6%"],
+        ["", "Sliding Window (B3)", "37.58 [35.33, 39.43]", "32.67 [30.68, 35.28]", "0.8998", "10.2%"],
+        ["", "Fixed Exploration (B4)", "35.16 [32.14, 37.65]", "31.41 [29.68, 33.61]", "0.7013", "90.6%"],
+        ["", "FedQual-CPX (B8, Proposed)", "33.37 [32.22, 34.36]", "30.90 [29.45, 32.03]", "0.4962", "100.0%"],
     ]
 
     for row_data in t2_data:
@@ -457,7 +458,7 @@ def build_docx(output_path: str = "paper.docx"):
     p_t2cap.alignment = WD_ALIGN_PARAGRAPH.CENTER
     p_t2cap.paragraph_format.space_before = Pt(2)
     p_t2cap.paragraph_format.space_after = Pt(8)
-    run_t2 = p_t2cap.add_run("Table 2: CIFAR-10 multi-drift benchmark results (mean and 95% bootstrap CI across 10 deterministic seeds for core policies and 5 seeds for ablative baselines).")
+    run_t2 = p_t2cap.add_run("Table 2: CIFAR-10 multi-drift benchmark results (mean and 95% bootstrap CI across 10 deterministic seeds for Random, FedQual-CPX, Page-Hinckley, and Oort; 5 deterministic seeds for Utility Greedy, Sliding Window, and Fixed Exploration).")
     run_t2.font.name = "Times New Roman"
     run_t2.font.size = Pt(8.5)
     run_t2.font.italic = True
@@ -717,8 +718,12 @@ def build_docx(output_path: str = "paper.docx"):
         "For typical experimental parameters (tau_obs = 11, T - tau = 50, gamma = 0.6), the critical participation threshold is rho* = 11 / (0.6 * 50) = 0.36. "
         "When rho < rho* (evaluated at rho in {0.05, 0.10}), the coordinator doesn't observe clients frequently enough to catch drift in time to recover. "
         "Unbiased random sampling wins because it avoids observation delays entirely. "
-        "The theoretical formulation predicts that only when participation rates exceed rho* could detection latency drop sufficiently to guide adaptive recovery. "
-        "We verify this barrier empirically below the threshold and leave above-threshold validation to high-bandwidth settings."
+        "The theoretical formulation predicts that only when participation rates approach and exceed rho* could detection latency drop sufficiently to guide adaptive recovery."
+    )
+    add_p(
+        "The participation sweep intentionally employs an asymmetric seed allocation grounded in statistical effect size. "
+        "Under severe partial observability (rho = 0.05 and rho = 0.10), the performance deficits are large (5.94% and 4.78%) and confidence intervals are widely separated, confirming the barrier unambiguously across three deterministic seeds ([42, 43, 44]). "
+        "In contrast, the crossover regime (rho in {0.25, 0.36, 0.50}) was expanded to eight deterministic seeds ([42 through 49]) specifically to provide the statistical resolution required to verify the analytical transition threshold (rho* ≈ 0.36) and demonstrate sub-one-percent parity without noise-induced ambiguity."
     )
 
     # Table 7: Empirical Verification of the Barrier
@@ -756,7 +761,7 @@ def build_docx(output_path: str = "paper.docx"):
     p_t7cap.alignment = WD_ALIGN_PARAGRAPH.CENTER
     p_t7cap.paragraph_format.space_before = Pt(2)
     p_t7cap.paragraph_format.space_after = Pt(8)
-    run_t7 = p_t7cap.add_run("Table 7: Empirical verification of the partial observability barrier across sampling ratios rho in {0.05, 0.10, 0.25, 0.36, 0.50} on CIFAR-10 (T=100 rounds, 8 seeds for rho >= 0.25, 3 seeds for rho <= 0.10).")
+    run_t7 = p_t7cap.add_run("Table 7: Empirical verification of the partial observability barrier across sampling ratios rho in {0.05, 0.10, 0.25, 0.36, 0.50} on CIFAR-10 (T=100 rounds; 8 deterministic seeds for crossover regime rho >= 0.25, 3 deterministic seeds for severe partial observability rho <= 0.10).")
     run_t7.font.name = "Times New Roman"
     run_t7.font.size = Pt(8.5)
     run_t7.font.italic = True

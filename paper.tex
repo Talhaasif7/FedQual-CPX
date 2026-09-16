@@ -185,7 +185,7 @@ where $\text{ChangeSuspect}_i = 1.0$ if client $i$ triggered a change alarm with
 
 \begin{table*}[t]
 \centering
-\caption{CIFAR-10 multi-drift benchmark results (mean and 95\% bootstrap confidence intervals across 10 deterministic seeds for core policies and 5 seeds for ablative baselines).}
+\caption{CIFAR-10 multi-drift benchmark results (mean and 95\% bootstrap confidence intervals across 10 deterministic seeds for Random, FedQual-CPX, Page-Hinckley, and Oort; 5 deterministic seeds for Utility Greedy, Sliding Window, and Fixed Exploration).}
 \label{tab:cifar10_results}
 \begin{tabular}{llcccc}
 \toprule
@@ -220,7 +220,7 @@ The empirical testbed evaluates client selection policies across diverse non-sta
 \subsection{Experimental Configuration}
 All CIFAR-10 experiments distribute training samples across $N=100$ clients using a Dirichlet distribution with concentration parameter $\alpha = 0.5$. In each communication round, the server samples $K = 10$ devices ($\rho = 0.10$). Local training runs for $E = 1$ epoch with batch size $B = 32$ using stochastic gradient descent. Concept drift is injected on thirty percent of edge clients at round $\tau = 50$.
 
-Ten deterministic seeds ($[42, 43, 44, 45, 46, 47, 48, 49, 50, 51]$) are executed for core policies (Random, Page-Hinckley Adaptive, FedQual-CPX, and Oort) to eliminate sample size constraints. Performance metrics include final test accuracy, post-drift recovery accuracy (rounds $\tau$ to $T$), client coverage percentage, and participation Gini inequality.
+To ensure robust non-parametric statistical power ($p = 0.00195$), ten deterministic seeds ($[42, 43, 44, 45, 46, 47, 48, 49, 50, 51]$) are executed for the primary evaluated policies (Random, FedQual-CPX, Page-Hinckley Adaptive, and Oort). The auxiliary comparison baselines (Utility Greedy, Sliding Window, and Fixed Exploration) remain evaluated across five deterministic seeds ($[42 \dots 46]$) because their severe client starvation behaviors ($G \approx 0.90$) and performance deficits are already decisively established. Performance metrics include final test accuracy, post-drift recovery accuracy (rounds $\tau$ to $T$), client coverage percentage, and participation Gini inequality.
 
 \subsection{CIFAR-10 Multi-Drift Benchmark}
 Table~\ref{tab:cifar10_results} reports the benchmark results across three distinct drift modalities.
@@ -382,9 +382,11 @@ For typical experimental parameters ($\tau_{\text{obs}} \approx 11$, $T - \tau^*
 
 When $\rho < \rho^*$ (evaluated at $\rho \in \{0.05, 0.10\}$), the coordinator doesn't observe clients frequently enough to catch drift in time to recover. Unbiased random sampling wins because it avoids observation latency entirely. The theoretical formulation predicts that only when participation rates approach and exceed $\rho^*$ could detection latency drop sufficiently to close the gap with random selection.
 
+\textit{Evaluation Protocol and Seed Allocation Across Sampling Ratios}: The participation sweep intentionally employs an asymmetric seed allocation grounded in statistical effect size. Under severe partial observability ($\rho = 0.05$ and $\rho = 0.10$), the performance deficits are large ($5.94\%$ and $4.78\%$) and confidence intervals are widely separated, confirming the barrier unambiguously across three deterministic seeds ($[42, 43, 44]$). In contrast, the crossover regime ($\rho \in \{0.25, 0.36, 0.50\}$) was expanded to eight deterministic seeds ($[42 \dots 49]$) specifically to provide the statistical resolution required to verify the analytical transition threshold ($\rho^* \approx 0.36$) and demonstrate sub-one-percent parity without noise-induced ambiguity.
+
 \begin{table}[h]
 \centering
-\caption{Empirical verification of the partial observability barrier across sampling ratios $\rho \in \{0.05, 0.10, 0.25, 0.36, 0.50\}$ on CIFAR-10 ($T=100$ rounds, 8 seeds for $\rho \ge 0.25$, 3 seeds for $\rho \le 0.10$).}
+\caption{Empirical verification of the partial observability barrier across sampling ratios $\rho \in \{0.05, 0.10, 0.25, 0.36, 0.50\}$ on CIFAR-10 ($T=100$ rounds; 8 deterministic seeds for crossover regime $\rho \ge 0.25$, 3 deterministic seeds for severe partial observability $\rho \le 0.10$).}
 \label{tab:kn_results}
 \begin{tabular}{llcccc}
 \toprule

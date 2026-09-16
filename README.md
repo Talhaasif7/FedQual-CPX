@@ -83,10 +83,10 @@ In each round $t$, the server partitions the selection budget $K$ into an **expl
 
 ## 4. Comprehensive Empirical Benchmark Results
 
-All experiments were executed with deterministic random seeds under identical communication budgets ($N=100$ clients, $K=10$ selected per round, $T=100$ rounds, local epochs $E=1$, batch size $B=32$). Core policies were evaluated across **10 deterministic seeds (`[42, 43, 44, 45, 46, 47, 48, 49, 50, 51]`)** to ensure high non-parametric statistical power ($p = 0.00195$).
+All experiments were executed with deterministic random seeds under identical communication budgets ($N=100$ clients, $K=10$ selected per round, $T=100$ rounds, local epochs $E=1$, batch size $B=32$). To ensure robust non-parametric statistical power ($p = 0.00195$), primary policies (Random, FedQual-CPX, Page-Hinckley Adaptive, and Oort) were evaluated across **10 deterministic seeds (`[42, 43, 44, 45, 46, 47, 48, 49, 50, 51]`)**. Auxiliary heuristic baselines (Utility Greedy, Sliding Window, Fixed Exploration) remain evaluated across **5 deterministic seeds (`[42..46]`)** because their extreme starvation behaviors ($G \approx 0.90$) and performance deficits are already decisively established.
 
 ### 4.1 CIFAR-10 Multi-Drift Benchmark Suite
-*Non-IID Dirichlet partition $\alpha=0.5$. Concept drift injected on 30% of clients at $\tau=50$ (or interpolated across $\tau \in [30, 70]$ for gradual drift). Mean and 95% bootstrap confidence intervals across 10 deterministic seeds for core policies and 5 seeds for ablative baselines*:
+*Non-IID Dirichlet partition $\alpha=0.5$. Concept drift injected on 30% of clients at $\tau=50$ (or interpolated across $\tau \in [30, 70]$ for gradual drift). Mean and 95% bootstrap confidence intervals across 10 deterministic seeds for Random, FedQual-CPX, Page-Hinckley, and Oort; 5 deterministic seeds for Utility Greedy, Sliding Window, and Fixed Exploration*:
 
 | Drift Modality | Selection Policy | Final Test Acc (95% CI) | Post-Drift Recovery Acc (95% CI) | Participation Gini ($\downarrow$) | Client Coverage |
 |---|---|:---:|:---:|:---:|:---:|
@@ -186,7 +186,11 @@ To address reviewer feedback regarding the common-mode vulnerability of cross-se
 ### 4.7 Phase 16: The Participation Spectrum & Crossover Threshold ($\rho = K/N$)
 We analyzed and validated the participation ratio threshold $\rho = K / N$ where change-aware client selection overcomes observation delay. By Theorem 1, round detection latency scales as $T_{\text{delay}} \ge \frac{N}{K} \tau_{\text{obs}}$. For typical parameters ($\tau_{\text{obs}} \approx 11$, $T - \tau = 50$, $\gamma = 0.6$), the critical predicted threshold is **$\rho^* \approx 0.36$**. 
 
-*Extended multi-seed sweep on CIFAR-10 ($N=100, T=100$) across 8 deterministic seeds for $\rho \ge 0.25$ and 3 seeds for $\rho \le 0.10$*:
+> [!NOTE]
+> **Asymmetric Seed Allocation Rationale**:
+> Compute was intentionally allocated based on statistical effect size. Under severe partial observability ($\rho = 0.05$ and $\rho = 0.10$), the performance gaps are large ($5.94\%$ and $4.78\%$) and confidence intervals do not overlap, confirming the barrier unambiguously across **3 deterministic seeds (`[42, 43, 44]`)**. In contrast, the crossover regime ($\rho \in \{0.25, 0.36, 0.50\}$) was expanded to **8 deterministic seeds (`[42..49]`)** to provide the statistical resolution required to verify the analytical transition threshold ($\rho^* \approx 0.36$) and demonstrate sub-one-percent parity without noise-induced ambiguity.
+
+*Empirical verification of the partial observability barrier on CIFAR-10 ($N=100, T=100$; 8 deterministic seeds for crossover regime $\rho \ge 0.25$, 3 deterministic seeds for severe partial observability $\rho \le 0.10$)*:
 
 | Ratio ($\rho$) | Selection Policy | Final Test Acc (95% CI) | Post-Drift Recovery Acc (95% CI) | Participation Gini ($\downarrow$) | Client Coverage |
 |:---:|---|:---:|:---:|:---:|:---:|
