@@ -46,8 +46,8 @@ def main() -> None:
                 pass
         target_seeds = sorted(list(found_seeds)) if found_seeds else [42, 43, 44, 45, 46]
 
-    finals: dict[str, list[float]] = {m: [] for m in methods}
-    ginis: dict[str, list[float]] = {m: [] for m in methods}
+    finals: dict[str, dict[int, float]] = {m: {} for m in methods}
+    ginis: dict[str, dict[int, float]] = {m: {} for m in methods}
 
     for m in methods:
         for s in target_seeds:
@@ -59,8 +59,8 @@ def main() -> None:
                 if d.get("total_rounds", 0) < 50:
                     print(f"Warning: Skipping {path} because total_rounds={d.get('total_rounds', 0)} < 50.")
                     continue
-                finals[m].append(float(d["final_accuracy"]))
-                ginis[m].append(float(d.get("participation", {}).get("gini", 0.0)))
+                finals[m][s] = float(d["final_accuracy"])
+                ginis[m][s] = float(d.get("participation", {}).get("gini", 0.0))
 
     print(f"Loaded seeds count for {args.drift_type} (Target seeds={target_seeds}):", {m: len(v) for m, v in finals.items()})
 
@@ -68,12 +68,20 @@ def main() -> None:
     for m in methods:
         if m == "fedqual_cpx":
             continue
+        common_seeds = sorted(set(finals["fedqual_cpx"].keys()) & set(finals[m].keys()))
+        if not common_seeds:
+            continue
+        a_acc = [finals["fedqual_cpx"][s] for s in common_seeds]
+        b_acc = [finals[m][s] for s in common_seeds]
+        a_gini = [ginis["fedqual_cpx"][s] for s in common_seeds]
+        b_gini = [ginis[m][s] for s in common_seeds]
+
         r_acc = compare_paired_methods(
-            finals["fedqual_cpx"], finals[m],
+            a_acc, b_acc,
             method_a_name="FedQual-CPX", method_b_name=m,
         )
         r_gini = compare_paired_methods(
-            ginis["fedqual_cpx"], ginis[m],
+            a_gini, b_gini,
             method_a_name="FedQual-CPX (Gini)", method_b_name=f"{m} (Gini)",
         )
         results.append({"metric": "final_accuracy", **r_acc})
