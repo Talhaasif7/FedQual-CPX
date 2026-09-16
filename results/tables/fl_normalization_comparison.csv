@@ -1,0 +1,4 @@
+normalization_strategy,description,num_seeds,final_acc_mean,final_acc_ci_95,recovery_acc_mean,recovery_acc_ci_95,gini_mean,coverage_mean
+cross_sectional,Cross-Sectional Robust MAD (Contemporaneous Batch),5,33.24,"[31.66, 34.88]",29.43,"[28.12, 30.35]",0.4846,100.0
+temporal,Per-Client Temporal Baseline (Historical),5,35.48,"[33.60, 37.36]",31.16,"[29.63, 32.77]",0.295,100.0
+raw,Raw Utility Differences (No Normalization),5,30.95,"[27.52, 33.87]",28.6,"[27.53, 29.39]",0.5209,100.0

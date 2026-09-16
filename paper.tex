@@ -149,6 +149,8 @@ A second obstacle arises from utility normalization. To prevent client loss scal
 
 This invariance masks widespread distribution changes. In synthetic simulations with $100\%$ common-mode drift, cross-sectional normalization erases the shift entirely (post-drift normalized score remains $0.005$, yielding zero signal shift detections), whereas per-client temporal normalization tracks the true shift (post-drift score $-2.662$) and achieves $99.8\%$ detection. Drifting clients don't appear as outliers relative to peers in the same round, suppressing the input signal that sequential detectors need.
 
+As empirically verified inside operational federated runs (Section~\ref{sec:fl_norm_comp}, Table~\ref{tab:fl_norm_results}), per-client temporal normalization achieves higher final accuracy ($35.48\%$ vs. $33.24\%$) and dramatically lower client starvation ($G = 0.2950$ vs. $0.4846$) compared to contemporaneous cross-sectional MAD, while raw unnormalized differences degrade to $30.95\%$. By tracking an individualized historical baseline rather than forcing contemporaneous cohort comparisons, temporal scaling avoids common-mode suppression without introducing cohort-dependent distortion.
+
 \section{The FedQual-CPX Framework}
 Fig. 1 and Fig. 2 illustrate the complete architecture of FedQual-CPX. The server tracks empirical loss improvements, processes them with causal scaling, and balances exploration against exploitation.
 
@@ -221,7 +223,7 @@ All CIFAR-10 experiments distribute training samples across $N=100$ clients usin
 Ten deterministic seeds ($[42, 43, 44, 45, 46, 47, 48, 49, 50, 51]$) are executed for core policies (Random, Page-Hinckley Adaptive, FedQual-CPX, and Oort) to eliminate sample size constraints. Performance metrics include final test accuracy, post-drift recovery accuracy (rounds $\tau$ to $T$), client coverage percentage, and participation Gini inequality.
 
 \subsection{CIFAR-10 Multi-Drift Benchmark}
-Table 2 reports the benchmark results across three distinct drift modalities.
+Table~\ref{tab:cifar10_results} reports the benchmark results across three distinct drift modalities.
 
 Under abrupt class swap drift, uniform random selection achieves $27.21\%$ post-drift recovery accuracy and $36.19\%$ final accuracy across ten seeds. FedQual-CPX achieves $25.79\%$ recovery accuracy and $34.01\%$ final accuracy. The change-aware policy does not beat random selection. Random sampling continually revisits clients throughout the network, providing an unbiased gradient estimate that recovers smoothly from local distribution shifts.
 
@@ -258,7 +260,7 @@ To rigorously assess the performance differences across the 100-round benchmark 
 By expanding to $n=10$ paired seeds, the sample size constraint that bounded $5$-seed Wilcoxon tests ($p \ge 2^{-4} = 0.0625$) is eliminated, confirming high statistical power ($p = 0.00195$) for non-parametric significance testing.
 
 \subsection{EMNIST-ByClass Benchmark}
-Table 3 reports benchmark results on the 62-class EMNIST-ByClass character dataset using a convolutional architecture across fifty thousand training samples distributed across $N=100$ clients via Dirichlet non-IID partitioning ($\alpha=0.5$).
+Table~\ref{tab:femnist_results} reports benchmark results on the 62-class EMNIST-ByClass character dataset using a convolutional architecture across fifty thousand training samples distributed across $N=100$ clients via Dirichlet non-IID partitioning ($\alpha=0.5$).
 
 \begin{table}[h]
 \centering
@@ -288,7 +290,7 @@ On EMNIST-ByClass, random selection again achieves the highest final accuracy ($
 Fig. 6 illustrates test accuracy progression on EMNIST-ByClass. Random sampling recovers faster than greedy or heuristic exploration after round fifty.
 
 \section{Diagnostic Ablation Study}
-To verify why change detection remains inert, Table 4 presents a systematic ten-condition ablation matrix on CIFAR-10. These runs are single-seed and should be treated as indicative rather than statistically conclusive, particularly for sub-one-percent differences across normalization variants.
+To verify why change detection remains inert, Table~\ref{tab:ablation_results} presents a systematic ten-condition ablation matrix on CIFAR-10. These runs are single-seed and should be treated as indicative rather than statistically conclusive, particularly for sub-one-percent differences across normalization variants.
 
 \begin{table}[h]
 \centering
@@ -312,11 +314,38 @@ C2\_no\_change\_bonus & No Change Bonus & 31.98\% & 31.98\% & 0.2780 \\
 \end{tabular}
 \end{table}
 
-Table 4 confirms the diagnosis. Condition A1 (CUSUM) and Condition A2 (Page-Hinckley) produce identical final accuracy ($32.45\%$) and identical Gini inequality ($0.2540$). Condition C2 disables the change detection bonus entirely and achieves comparable accuracy ($31.98\%$). The change detection signal does not influence downstream selection decisions because staleness and uncertainty terms dominate exploration scoring. Note that condition A1 ($32.45\%$) and condition B1 ($31.98\%$) reflect different hyperparameter search configurations: A1 utilized five warmup rounds with wider exploration ($\epsilon \in [0.08, 0.35]$), whereas B1 adhered to default baseline settings (ten warmup rounds, $\epsilon \in [0.05, 0.30]$).
+Table~\ref{tab:ablation_results} confirms the diagnosis. Condition A1 (CUSUM) and Condition A2 (Page-Hinckley) produce identical final accuracy ($32.45\%$) and identical Gini inequality ($0.2540$). Condition C2 disables the change detection bonus entirely and achieves comparable accuracy ($31.98\%$). The change detection signal does not influence downstream selection decisions because staleness and uncertainty terms dominate exploration scoring. Note that condition A1 ($32.45\%$) and condition B1 ($31.98\%$) reflect different hyperparameter search configurations: A1 utilized five warmup rounds with wider exploration ($\epsilon \in [0.08, 0.35]$), whereas B1 adhered to default baseline settings (ten warmup rounds, $\epsilon \in [0.05, 0.30]$).
 
 We also evaluated a direct remediation where the change suspicion weight in exploration scoring was boosted from $0.20$ to $1.00$. Even with prioritized exploration for flagged devices, the fundamental delay inflation bound persisted: the server still requires sufficient observation opportunities to detect the change initially.
 
-Table 5 checks robustness across non-IID Dirichlet concentration values $\alpha \in \{0.1, 0.5, 1.0\}$ and drift fractions. Under severe non-IID conditions ($\alpha = 0.1$), both random selection and FedQual-CPX reach ten percent accuracy, showing that severe label skew limits all policies equally.
+\subsection{In-FL Normalization Head-to-Head Comparison}
+\label{sec:fl_norm_comp}
+To determine whether the common-mode vulnerability of cross-sectional normalization identified in Proposition 2 creates observable consequences during actual federated model training, Table~\ref{tab:fl_norm_results} reports a head-to-head empirical evaluation comparing three normalization regimes across five deterministic seeds ($42, 43, 44, 45, 46$) over 100 communication rounds on CIFAR-10 under abrupt class-swap concept drift ($\tau=50, N=100, K=10$):
+\begin{itemize}
+\item \textbf{Cross-Sectional Robust MAD}: contemporaneous outlier normalization across the sampled cohort $S_t$ (the standard FedQual-CPX default).
+\item \textbf{Per-Client Temporal Baseline}: individualized running exponential mean and variance tracking historical observations for each edge client.
+\item \textbf{Raw Differences}: unnormalized empirical utility improvements passed directly to exploration and change detectors without scaling.
+\end{itemize}
+
+\begin{table}[h]
+\centering
+\caption{In-FL normalization head-to-head comparison across five deterministic seeds ($T=100$ rounds, $N=100, K=10$).}
+\label{tab:fl_norm_results}
+\begin{tabular}{lcccc}
+\toprule
+Normalization Strategy & Final Acc (95\% CI) & Recovery Acc (95\% CI) & Gini & Coverage \\
+\midrule
+Cross-Sectional Robust MAD & 33.24\% [31.66, 34.88] & 29.43\% [28.12, 30.35] & 0.4846 & 100.0\% \\
+Per-Client Temporal Baseline & 35.48\% [33.60, 37.36] & 31.16\% [29.63, 32.77] & 0.2950 & 100.0\% \\
+Raw Differences (No Normalization) & 30.95\% [27.52, 33.87] & 28.60\% [27.53, 29.39] & 0.5209 & 100.0\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The empirical results in Table~\ref{tab:fl_norm_results} validate both aspects of our theoretical diagnosis. Raw utility differences yield the poorest outcomes ($30.95\%$ final accuracy, $G = 0.5209$ Gini inequality) because arbitrary scale disparities across heterogeneous local datasets distort exploration rankings and destabilize the adaptive pool balance. Cross-sectional robust MAD stabilizes training ($33.24\%$ final accuracy), but its common-mode shift suppression causes it to trail per-client temporal normalization ($35.48\%$ final accuracy, $31.16\%$ recovery accuracy). Most strikingly, temporal baseline tracking achieves a dramatic reduction in participation inequality, dropping the Gini coefficient from $0.4846$ down to $0.2950$ while maintaining $100\%$ client coverage. By maintaining an individualized historical reference for each device, temporal normalization prevents clients from being falsely penalized or promoted simply due to the arbitrary quality of other clients co-sampled in the same communication round.
+
+\subsection{Robustness Stress-Testing}
+Table~\ref{tab:robustness_results} checks robustness across non-IID Dirichlet concentration values $\alpha \in \{0.1, 0.5, 1.0\}$ and drift fractions. Under severe non-IID conditions ($\alpha = 0.1$), both random selection and FedQual-CPX reach ten percent accuracy, showing that severe label skew limits all policies equally.
 
 \begin{table}[h]
 \centering

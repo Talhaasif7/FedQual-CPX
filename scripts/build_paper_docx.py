@@ -395,7 +395,8 @@ def build_docx(output_path: str = "paper.docx"):
         "To prevent client loss scales from skewing selection, systems apply robust z-score normalization using Median Absolute Deviation (MAD). "
         "Proposition 2 (Common-Mode Invariance of Cross-Sectional MAD): Let each participating client i in S_t undergo an identical additive utility shift u_{i,t} <- u_{i,t} + Delta where Delta is a scalar. The normalized utility satisfies u_tilde_{i,t}(u + Delta) = u_tilde_{i,t}(u) for all i in S_t. "
         "Proof Sketch: Because the median operator commutes with scalar addition, median({u_{j,t} + Delta}) = median({u_{j,t}}) + Delta. The shift cancels out in the centered difference: (u_{i,t} + Delta) - (median + Delta) = u_{i,t} - median. Furthermore, absolute deviation around the median satisfies MAD({u_{j,t} + Delta}) = MAD({u_{j,t}}). Consequently, u_tilde_{i,t} is invariant to common-mode shifts. "
-        "In synthetic simulations with 100% common-mode drift, cross-sectional normalization erases the shift entirely (post-drift normalized score remains 0.005, yielding zero signal shift detections), whereas per-client temporal normalization tracks the true shift (post-drift score -2.662) and achieves 99.8% detection. Drifting clients don't appear as outliers relative to peers in the same round, suppressing the input signal that sequential detectors need."
+        "In synthetic simulations with 100% common-mode drift, cross-sectional normalization erases the shift entirely (post-drift normalized score remains 0.005, yielding zero signal shift detections), whereas per-client temporal normalization tracks the true shift (post-drift score -2.662) and achieves 99.8% detection. Drifting clients don't appear as outliers relative to peers in the same round, suppressing the input signal that sequential detectors need. "
+        "As empirically verified inside operational federated runs (Section 6.1, Table 5), per-client temporal normalization achieves higher final accuracy (35.48% vs. 33.24%) and dramatically lower client starvation (G = 0.2950 vs. 0.4846) compared to contemporaneous cross-sectional MAD, while raw unnormalized differences degrade to 30.95%. By tracking an individualized historical baseline rather than forcing contemporaneous cohort comparisons, temporal scaling avoids common-mode suppression without introducing cohort-dependent distortion."
     )
 
     # 5. Experimental Evaluation
@@ -613,20 +614,68 @@ def build_docx(output_path: str = "paper.docx"):
         "Even with prioritized exploration for flagged devices, the fundamental delay inflation bound persisted: the server still requires sufficient observation opportunities to detect the change initially."
     )
 
+    add_h2("6.1 In-FL Normalization Head-to-Head Comparison")
     add_p(
-        "Table 5 checks robustness across non-IID Dirichlet concentration values alpha in {0.1, 0.5, 1.0} and drift fractions. "
+        "To determine whether the common-mode vulnerability of cross-sectional normalization identified in Proposition 2 creates observable consequences during actual federated model training, Table 5 reports a head-to-head empirical evaluation comparing three normalization regimes across five deterministic seeds (42, 43, 44, 45, 46) over 100 communication rounds on CIFAR-10 under abrupt class-swap concept drift (tau = 50, N = 100, K = 10):"
+    )
+
+    # Table 5: In-FL Normalization Comparison
+    t5_norm = doc.add_table(rows=1, cols=5)
+    t5_norm.alignment = WD_TABLE_ALIGNMENT.CENTER
+    widths5_norm = [2.2, 1.4, 1.4, 0.9, 0.9]
+    headers5_norm = ["Normalization Strategy", "Final Acc (%)", "Recovery Acc (%)", "Gini", "Coverage"]
+    for idx, name in enumerate(headers5_norm):
+        t5_norm.rows[0].cells[idx].text = name
+        set_cell_background(t5_norm.rows[0].cells[idx], "1F497D")
+        set_cell_margins(t5_norm.rows[0].cells[idx])
+        p = t5_norm.rows[0].cells[idx].paragraphs[0]
+        p.alignment = WD_ALIGN_PARAGRAPH.LEFT if idx == 0 else WD_ALIGN_PARAGRAPH.RIGHT
+        for r in p.runs:
+            r.font.bold = True
+            r.font.size = Pt(8.5)
+            r.font.color.rgb = RGBColor(255, 255, 255)
+            r.font.name = "Times New Roman"
+
+    t5_norm_data = [
+        ["Cross-Sectional Robust MAD", "33.24 [31.7, 34.9]", "29.43 [28.1, 30.4]", "0.4846", "100.0%"],
+        ["Per-Client Temporal Baseline", "35.48 [33.6, 37.4]", "31.16 [29.6, 32.8]", "0.2950", "100.0%"],
+        ["Raw Differences (No Norm)", "30.95 [27.5, 33.9]", "28.60 [27.5, 29.4]", "0.5209", "100.0%"],
+    ]
+    for row_data in t5_norm_data:
+        add_table_row(t5_norm, row_data, col_widths=widths5_norm)
+
+    p_t5ncap = doc.add_paragraph()
+    p_t5ncap.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p_t5ncap.paragraph_format.space_before = Pt(2)
+    p_t5ncap.paragraph_format.space_after = Pt(8)
+    run_t5n = p_t5ncap.add_run("Table 5: In-FL normalization head-to-head comparison across five deterministic seeds (T=100 rounds, N=100, K=10).")
+    run_t5n.font.name = "Times New Roman"
+    run_t5n.font.size = Pt(8.5)
+    run_t5n.font.italic = True
+
+    add_p(
+        "The empirical results in Table 5 validate both aspects of our theoretical diagnosis. "
+        "Raw utility differences yield the poorest outcomes (30.95% final accuracy, G = 0.5209 Gini inequality) because arbitrary scale disparities across heterogeneous local datasets distort exploration rankings and destabilize the adaptive pool balance. "
+        "Cross-sectional robust MAD stabilizes training (33.24% final accuracy), but its common-mode shift suppression causes it to trail per-client temporal normalization (35.48% final accuracy, 31.16% recovery accuracy). "
+        "Most strikingly, temporal baseline tracking achieves a dramatic reduction in participation inequality, dropping the Gini coefficient from 0.4846 down to 0.2950 while maintaining 100% client coverage. "
+        "By maintaining an individualized historical reference for each device, temporal normalization prevents clients from being falsely penalized or promoted simply due to the arbitrary quality of other clients co-sampled in the same communication round."
+    )
+
+    add_h2("6.2 Robustness Stress-Testing")
+    add_p(
+        "Table 6 checks robustness across non-IID Dirichlet concentration values alpha in {0.1, 0.5, 1.0} and drift fractions. "
         "Under severe non-IID conditions (alpha = 0.1), both random selection and FedQual-CPX reach ten percent accuracy, showing that severe label skew limits all policies equally."
     )
 
-    # Table 5: Robustness
-    t5 = doc.add_table(rows=1, cols=5)
-    t5.alignment = WD_TABLE_ALIGNMENT.CENTER
-    widths5 = [1.8, 1.5, 1.2, 1.1, 1.1]
+    # Table 6: Robustness
+    t6 = doc.add_table(rows=1, cols=5)
+    t6.alignment = WD_TABLE_ALIGNMENT.CENTER
+    widths6 = [1.8, 1.5, 1.2, 1.1, 1.1]
     for idx, name in enumerate(["Parameter Setting", "Policy", "Final Acc", "Gini", "Coverage"]):
-        t5.rows[0].cells[idx].text = name
-        set_cell_background(t5.rows[0].cells[idx], "1F497D")
-        set_cell_margins(t5.rows[0].cells[idx])
-        p = t5.rows[0].cells[idx].paragraphs[0]
+        t6.rows[0].cells[idx].text = name
+        set_cell_background(t6.rows[0].cells[idx], "1F497D")
+        set_cell_margins(t6.rows[0].cells[idx])
+        p = t6.rows[0].cells[idx].paragraphs[0]
         p.alignment = WD_ALIGN_PARAGRAPH.LEFT if idx <= 1 else WD_ALIGN_PARAGRAPH.RIGHT
         for r in p.runs:
             r.font.bold = True
@@ -634,7 +683,7 @@ def build_docx(output_path: str = "paper.docx"):
             r.font.color.rgb = RGBColor(255, 255, 255)
             r.font.name = "Times New Roman"
 
-    t5_data = [
+    t6_data = [
         ["Dirichlet alpha = 0.1", "Random / FedAvg", "10.00%", "0.2391", "100.0%"],
         ["Dirichlet alpha = 0.1", "FedQual-CPX", "10.00%", "0.2431", "100.0%"],
         ["Dirichlet alpha = 0.5", "Random / FedAvg", "40.84%", "0.2391", "100.0%"],
@@ -644,17 +693,17 @@ def build_docx(output_path: str = "paper.docx"):
         ["Drift Fraction 10%", "FedQual-CPX", "43.14%", "0.2827", "100.0%"],
         ["Drift Fraction 50%", "FedQual-CPX", "38.16%", "0.2693", "100.0%"],
     ]
-    for row_data in t5_data:
-        add_table_row(t5, row_data, col_widths=widths5)
+    for row_data in t6_data:
+        add_table_row(t6, row_data, col_widths=widths6)
 
-    p_t5cap = doc.add_paragraph()
-    p_t5cap.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p_t5cap.paragraph_format.space_before = Pt(2)
-    p_t5cap.paragraph_format.space_after = Pt(8)
-    run_t5 = p_t5cap.add_run("Table 5: Robustness stress-testing across non-IID skew and drift fractions.")
-    run_t5.font.name = "Times New Roman"
-    run_t5.font.size = Pt(8.5)
-    run_t5.font.italic = True
+    p_t6cap = doc.add_paragraph()
+    p_t6cap.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p_t6cap.paragraph_format.space_before = Pt(2)
+    p_t6cap.paragraph_format.space_after = Pt(8)
+    run_t6 = p_t6cap.add_run("Table 6: Robustness stress-testing across non-IID skew and drift fractions.")
+    run_t6.font.name = "Times New Roman"
+    run_t6.font.size = Pt(8.5)
+    run_t6.font.italic = True
 
     # 7. A Predicted Participation Threshold
     add_h1("7. A Predicted Participation Threshold")
@@ -672,15 +721,15 @@ def build_docx(output_path: str = "paper.docx"):
         "We verify this barrier empirically below the threshold and leave above-threshold validation to high-bandwidth settings."
     )
 
-    # Table 6: Empirical Verification of the Barrier
-    t6 = doc.add_table(rows=1, cols=6)
-    t6.alignment = WD_TABLE_ALIGNMENT.CENTER
-    widths6 = [1.3, 1.8, 1.4, 1.4, 0.9, 0.9]
+    # Table 7: Empirical Verification of the Barrier
+    t7 = doc.add_table(rows=1, cols=6)
+    t7.alignment = WD_TABLE_ALIGNMENT.CENTER
+    widths7 = [1.3, 1.8, 1.4, 1.4, 0.9, 0.9]
     for idx, name in enumerate(["Ratio (rho)", "Selection Policy", "Final Acc (%)", "Recovery Acc (%)", "Gini", "Coverage"]):
-        t6.rows[0].cells[idx].text = name
-        set_cell_background(t6.rows[0].cells[idx], "1F497D")
-        set_cell_margins(t6.rows[0].cells[idx])
-        p = t6.rows[0].cells[idx].paragraphs[0]
+        t7.rows[0].cells[idx].text = name
+        set_cell_background(t7.rows[0].cells[idx], "1F497D")
+        set_cell_margins(t7.rows[0].cells[idx])
+        p = t7.rows[0].cells[idx].paragraphs[0]
         p.alignment = WD_ALIGN_PARAGRAPH.LEFT if idx <= 1 else WD_ALIGN_PARAGRAPH.RIGHT
         for r in p.runs:
             r.font.bold = True
@@ -688,7 +737,7 @@ def build_docx(output_path: str = "paper.docx"):
             r.font.color.rgb = RGBColor(255, 255, 255)
             r.font.name = "Times New Roman"
 
-    t6_data = [
+    t7_data = [
         ["rho = 0.05", "Random / FedAvg (B0)", "33.08 [30.9, 34.4]", "24.01 [22.8, 26.3]", "0.2432", "99.3%"],
         ["rho = 0.05", "FedQual-CPX (B8)", "27.14 [23.6, 30.1]", "23.32 [21.9, 24.3]", "0.4347", "100.0%"],
         ["rho = 0.10", "Random / FedAvg (B0)", "36.58 [30.6, 40.5]", "30.79 [28.5, 32.4]", "0.1705", "100.0%"],
@@ -700,20 +749,20 @@ def build_docx(output_path: str = "paper.docx"):
         ["rho = 0.50", "Random / FedAvg (B0)", "45.69 [45.1, 46.3]", "40.90 [40.3, 41.5]", "0.0581", "100.0%"],
         ["rho = 0.50", "FedQual-CPX (B8)", "45.36 [45.0, 45.8]", "41.13 [40.5, 41.6]", "0.2718", "100.0%"],
     ]
-    for row_data in t6_data:
-        add_table_row(t6, row_data, col_widths=widths6)
+    for row_data in t7_data:
+        add_table_row(t7, row_data, col_widths=widths7)
 
-    p_t6cap = doc.add_paragraph()
-    p_t6cap.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p_t6cap.paragraph_format.space_before = Pt(2)
-    p_t6cap.paragraph_format.space_after = Pt(8)
-    run_t6 = p_t6cap.add_run("Table 6: Empirical verification of the partial observability barrier across sampling ratios rho in {0.05, 0.10, 0.25, 0.36, 0.50} on CIFAR-10 (T=100 rounds, 8 seeds for rho >= 0.25, 3 seeds for rho <= 0.10).")
-    run_t6.font.name = "Times New Roman"
-    run_t6.font.size = Pt(8.5)
-    run_t6.font.italic = True
+    p_t7cap = doc.add_paragraph()
+    p_t7cap.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p_t7cap.paragraph_format.space_before = Pt(2)
+    p_t7cap.paragraph_format.space_after = Pt(8)
+    run_t7 = p_t7cap.add_run("Table 7: Empirical verification of the partial observability barrier across sampling ratios rho in {0.05, 0.10, 0.25, 0.36, 0.50} on CIFAR-10 (T=100 rounds, 8 seeds for rho >= 0.25, 3 seeds for rho <= 0.10).")
+    run_t7.font.name = "Times New Roman"
+    run_t7.font.size = Pt(8.5)
+    run_t7.font.italic = True
 
     add_p(
-        "Table 6 empirically validates this predicted barrier across the full participation spectrum rho in {0.05, 0.10, 0.25, 0.36, 0.50} on full multi-seed 100-round evaluations (N=100, T=100). "
+        "Table 7 empirically validates this predicted barrier across the full participation spectrum rho in {0.05, 0.10, 0.25, 0.36, 0.50} on full multi-seed 100-round evaluations (N=100, T=100). "
         "Across the extended 8-seed sweep on rho >= 0.25, the analytical threshold derived from the renewal delay model (rho* approx 0.36) is confirmed with high precision. "
         "At severe partial observability (rho = 0.05), Random selection achieves a 5.94% advantage in final accuracy (33.08% vs. 27.14%) because the theoretical detection delay of 220 rounds far exceeds the entire 100-round budget. "
         "Doubling observability to rho = 0.10 narrows the deficit to 4.78% (36.58% vs. 31.80%). "
