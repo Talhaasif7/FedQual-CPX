@@ -1,5 +1,9 @@
 # FedQual-CPX: Investigating the Limits of Change-Point Client Selection under Partial Observability in Federated Learning
 
+**Talha Asif\***, **Samreena Yousaf†**, and **Muhammad Ahmad Zia\***  
+\* *Department of Computer Science, The University of Lahore, Lahore, Pakistan*  
+† *Department of Computer Science, University of Management and Technology, Lahore, Pakistan*  
+
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 [![PyTorch 2.0+](https://img.shields.io/badge/PyTorch-2.0%2B-orange.svg)](https://pytorch.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
@@ -489,11 +493,11 @@ If you utilize this codebase, benchmark protocols, or diagnostic findings in you
 
 ```bibtex
 @misc{fedqual_cpx_2026,
-  author       = {Anonymous Authors},
+  author       = {Talha Asif and Samreena Yousaf and Muhammad Ahmad Zia},
   title        = {The Partial Observability Barrier: Why Change-Point Client Selection Fails at Realistic Participation Rates in Federated Learning},
   howpublished = {\url{https://github.com/Talhaasif7/FedQual-CPX}},
   year         = {2026},
-  note         = {Under double-blind peer review at ICACS}
+  note         = {Submitted to ICACS 2026}
 }
 ```
 
