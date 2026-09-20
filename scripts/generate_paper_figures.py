@@ -489,8 +489,8 @@ def generate_all_paper_figures() -> None:
     import shutil
     output_dir = Path("results/figures")
     output_dir.mkdir(parents=True, exist_ok=True)
-    paper_dir = Path("paper/figures")
-    paper_dir.mkdir(parents=True, exist_ok=True)
+    figures_dir = Path("figures")
+    figures_dir.mkdir(parents=True, exist_ok=True)
     results_dir = Path("results/raw")
     tables_dir = Path("results/tables")
 
@@ -507,11 +507,11 @@ def generate_all_paper_figures() -> None:
     generate_figure7_leaf_benchmarks(tables_dir, output_dir)
 
     for png in output_dir.glob("*.png"):
-        shutil.copy2(png, paper_dir / png.name)
-    print(f"[Sync] Copied all publication figures to {paper_dir}/")
+        shutil.copy2(png, figures_dir / png.name)
+    print(f"[Sync] Copied all publication figures to {figures_dir}/")
 
     print("=" * 80)
-    print(f"All figures generated successfully in {output_dir}/ and {paper_dir}/")
+    print(f"All figures generated successfully in {output_dir}/ and {figures_dir}/")
 
 
 if __name__ == "__main__":

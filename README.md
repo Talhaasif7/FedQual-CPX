@@ -1,4 +1,4 @@
-# FedQual-CPX: Investigating the Limits of Change-Point Client Selection under Partial Observability in Federated Learning
+# Detection Latency under Partial Participation in Federated Learning
 
 **Talha Asif\***, **Samreena Yousaf†**, and **Muhammad Ahmad Zia\***  
 \* *Department of Computer Science, The University of Lahore, Lahore, Pakistan*  
@@ -400,11 +400,10 @@ python experiments/run_kn_sweep.py --k-list 25 36 50 --seeds 42 43 44 45 46 47 4
 python scripts/compute_statistical_tests.py
 ```
 
-### 8. Regenerate All Publication Figures, Diagrams & Word Manuscript
+### 8. Regenerate All Publication Figures & Diagrams
 ```powershell
 python scripts/generate_paper_figures.py
 python scripts/generate_methodology_diagrams.py
-python scripts/build_paper_docx.py
 ```
 
 ---
@@ -472,8 +471,6 @@ FedQual-CPX/
 │   ├── test_normalization.py         # Outlier resistance and scaling tests
 │   ├── test_partition.py             # Dirichlet partition balance tests
 │   └── test_selectors.py             # Selection policy invariant tests
-├── paper.tex                         # IEEE conference LaTeX manuscript
-├── paper.docx                        # Formatted Microsoft Word manuscript
 ├── references.bib                    # Complete BibTeX bibliography
 ├── requirements-lock.txt             # Pinned dependency manifest
 └── README.md                         # Authoritative repository documentation
@@ -485,16 +482,14 @@ FedQual-CPX/
 
 This codebase serves as the experimental and empirical foundation for the research manuscript submitted to the **8th International Conference on Advancements in Computational Sciences (ICACS)**:
 
-> **"The Partial Observability Barrier: Why Change-Point Client Selection Fails at Realistic Participation Rates in Federated Learning"**
-
-Both the IEEE two-column LaTeX source ([`paper.tex`](paper.tex)) and the styled Microsoft Word document ([`paper.docx`](paper.docx)) are maintained directly in the repository root directory.
+> **"Detection Latency under Partial Participation in Federated Learning"**
 
 If you utilize this codebase, benchmark protocols, or diagnostic findings in your research, please cite:
 
 ```bibtex
 @misc{fedqual_cpx_2026,
   author       = {Talha Asif and Samreena Yousaf and Muhammad Ahmad Zia},
-  title        = {The Partial Observability Barrier: Why Change-Point Client Selection Fails at Realistic Participation Rates in Federated Learning},
+  title        = {Detection Latency under Partial Participation in Federated Learning},
   howpublished = {\url{https://github.com/Talhaasif7/FedQual-CPX}},
   year         = {2026},
   note         = {Submitted to ICACS 2026}

@@ -185,7 +185,7 @@ def draw_detection_and_adaptation_flow(output_path: Path) -> None:
 
 def main() -> None:
     results_dir = Path("results/figures")
-    paper_dir = Path("paper/figures")
+    figures_dir = Path("figures")
 
     fig1_path = results_dir / "architecture_overview.png"
     fig2_path = results_dir / "detection_and_adaptation_flow.png"
@@ -193,10 +193,10 @@ def main() -> None:
     draw_architecture_overview(fig1_path)
     draw_detection_and_adaptation_flow(fig2_path)
 
-    # Sync to paper/figures
-    shutil.copy2(fig1_path, paper_dir / fig1_path.name)
-    shutil.copy2(fig2_path, paper_dir / fig2_path.name)
-    print(f"[Sync] Copied diagrams to {paper_dir}/")
+    # Sync to figures
+    shutil.copy2(fig1_path, figures_dir / fig1_path.name)
+    shutil.copy2(fig2_path, figures_dir / fig2_path.name)
+    print(f"[Sync] Copied diagrams to {figures_dir}/")
 
 
 if __name__ == "__main__":
